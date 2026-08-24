@@ -1,6 +1,13 @@
 "use client";
 
-import { Image as ImageIcon, MessagesSquare, MoreHorizontal, Star, Timer } from "lucide-react";
+import {
+  Image as ImageIcon,
+  ListChecks,
+  MessagesSquare,
+  MoreHorizontal,
+  Star,
+  Timer,
+} from "lucide-react";
 import Link from "next/link";
 import { COLLECTION_COLORS } from "@/lib/sources";
 import type { ChatMeta, Collection } from "@/lib/types";
@@ -28,6 +35,10 @@ export function ChatCard({
   const showExcerpt = Boolean(chat.excerpt) && key(chat.excerpt) !== key(chat.title);
   // The site icon is stored like any other asset but is not "media" to a reader.
   const mediaCount = (chat.assetIds ?? []).filter((id) => id !== chat.faviconAssetId).length;
+  // One turn can hold forty questions, so this is not the turn count.
+  const questionCount = chat.checklistCount ?? 0;
+  const studiedCount = chat.studied?.length ?? 0;
+  const hasChecklist = questionCount >= 2;
 
   return (
     <div
@@ -52,8 +63,10 @@ export function ChatCard({
             </p>
             <p className="mt-0.5 truncate text-[11.5px] text-ink-2">
               {collection ? `${collection.name} · ` : ""}
-              {chat.messageCount} turns · {chat.readMinutes} min ·{" "}
-              {relativeTime(chat.savedAt)}
+              {hasChecklist && studiedCount
+                ? `${studiedCount}/${questionCount} studied · `
+                : `${chat.messageCount} turns · `}
+              {chat.readMinutes} min · {relativeTime(chat.savedAt)}
             </p>
           </div>
         </>
@@ -98,10 +111,20 @@ export function ChatCard({
                   {mediaCount}
                 </span>
               ) : null}
-              <span className="flex items-center gap-1">
-                <MessagesSquare size={10} strokeWidth={2.2} />
-                {chat.messageCount}
-              </span>
+              {hasChecklist ? (
+                <span
+                  className={cn("flex items-center gap-1", studiedCount && "text-green")}
+                  title={`${studiedCount} of ${questionCount} questions ticked off`}
+                >
+                  <ListChecks size={10} strokeWidth={2.2} />
+                  {studiedCount}/{questionCount}
+                </span>
+              ) : (
+                <span className="flex items-center gap-1">
+                  <MessagesSquare size={10} strokeWidth={2.2} />
+                  {chat.messageCount}
+                </span>
+              )}
               <span className="flex items-center gap-1">
                 <Timer size={10} strokeWidth={2.2} />
                 {chat.readMinutes}m

@@ -54,15 +54,47 @@ Built by [DoodleByte Studio](https://doodlebytestudio.in), Chennai.
 - Cards or list, sorted by recent, last opened, title, length or oldest.
 - Filter by subject, source or favourites; quick text filter over the list.
 - **Pick up where you left off** for anything part-read.
-- Cards show a cover thumbnail, the source's own icon, tags, turn count,
-  reading time, stored media count and a reading-progress bar.
+- Cards show a cover thumbnail, the source's own icon, tags, reading time,
+  stored media count and a reading-progress bar. A chat with a checklist shows
+  how much of it you have ticked off instead of a turn count.
 
 **Reader**
 
-- Reading progress, an outline of every question, and resume-where-you-stopped.
+- Reading progress, a tickable checklist of every question, and
+  resume-where-you-stopped.
 - Text size, sans/serif/mono, chat or document layout, optional reasoning traces.
 - Copy any answer, pin the important ones, open the original.
 - Images with click-to-enlarge, video and audio with controls, player cards.
+
+**Checklist**
+
+- Every question in a chat on its own line, each with a box to tick once you
+  have studied it. Ticks are stored with the chat, so they survive a reload and
+  travel in a backup.
+- One turn holding a whole question bank becomes one row per question rather
+  than one row for the turn. That is the case it exists for: a forty-question
+  paste is two messages and forty things to revise.
+- **It reads the answer, not just the question.** A bank copied out of a Word or
+  PDF table arrives as one flat paragraph with the numbering buried
+  mid-sentence - `… K2 CO1 2 Identify the composition … K2 CO1 3 State the …` -
+  and no line starts with a number. The assistant lays it back out properly
+  before answering, so that restatement is what the checklist reads when the
+  question itself has no usable list.
+- A numbered line in an answer counts as a question when it is a heading, a line
+  that is entirely bold, or a line followed by its answer. Consecutive numbered
+  lines are a list of steps, not a question bank, and are left alone.
+- Line endings are read the way Markdown reads them, so a bank copied out of a
+  PDF - which often separates lines with a bare carriage return - splits into
+  questions rather than collapsing into one. A list that starts at something
+  other than 1 is treated as having lost its opening entries, and the answer's
+  own list is used instead.
+- Questions are **grouped by the heading they sit under**, so a bank spanning
+  three modules reads as three sections with their own counts, and the numbering
+  matches what is written in the answer rather than running 1-40.
+- Tapping a row jumps to that question's answer, or to its module when the
+  answer marks questions in bold rather than as headings.
+- Progress shows on the library card and in the study list, so you can see what
+  is left without opening anything.
 
 **Study mode**
 

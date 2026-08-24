@@ -84,6 +84,13 @@ export interface ChatMeta {
   note?: string;
   /** Message ids the user marked as important. */
   pinned: string[];
+  /** Checklist rows ticked off as studied. Ids come from buildChecklist(). */
+  studied?: string[];
+  /**
+   * How many checklist rows this chat has. Stored so the library can show
+   * progress without deserialising every message body to recount them.
+   */
+  checklistCount?: number;
   /** Asset ids this chat references, so deletes can collect orphaned blobs. */
   assetIds?: string[];
   /** Id of the first image, used as the library card thumbnail. */

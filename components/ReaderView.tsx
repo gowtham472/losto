@@ -9,7 +9,7 @@ import {
   ExternalLink,
   GraduationCap,
   Image as ImageIcon,
-  List,
+  ListChecks,
   MoreHorizontal,
   Pin,
   Star,
@@ -25,9 +25,10 @@ import { Button, EmptyState, Segmented, Skeleton, Well } from "@/components/ui/p
 import { Sheet } from "@/components/ui/sheet";
 import { useToast } from "@/components/ui/toast";
 import { storeLocalAsset } from "@/lib/assets";
+import { buildChecklist, checklistProgress } from "@/lib/checklist";
 import { useLibrary } from "@/lib/store";
 import type { Asset, ChatMessage, ChatMeta } from "@/lib/types";
-import { cn, copyText, formatDate, stripMarkdown, truncate } from "@/lib/utils";
+import { cn, copyText, formatDate, stripMarkdown } from "@/lib/utils";
 
 export function ReaderView() {
   const params = useSearchParams();
@@ -38,7 +39,8 @@ export function ReaderView() {
 
   const chat = useMemo(() => chats.find((c) => c.id === id), [chats, id]);
   const [messages, setMessages] = useState<ChatMessage[] | null>(null);
-  const [outlineOpen, setOutlineOpen] = useState(false);
+  const [checklistOpen, setChecklistOpen] = useState(false);
+  const jumpTo = useRef<string | null>(null);
   const [typeOpen, setTypeOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -141,6 +143,25 @@ export function ReaderView() {
     () => (messages ?? []).filter((m) => m.role === "user"),
     [messages],
   );
+
+  /*
+   * A single turn can hold a whole question bank, so the checklist is read out
+   * of the message text rather than from the turns themselves.
+   */
+  const checklist = useMemo(() => (messages ? buildChecklist(messages) : []), [messages]);
+  const studied = useMemo(() => chat?.studied ?? [], [chat?.studied]);
+  const ticked = useMemo(() => new Set(studied), [studied]);
+  const progressOf = checklistProgress(checklist, studied);
+  /* A bank spanning several modules reads as one 40-row wall without these. */
+  const groups = useMemo(() => {
+    const out: { section?: string; items: typeof checklist }[] = [];
+    for (const item of checklist) {
+      const last = out[out.length - 1];
+      if (last && last.section === item.section) last.items.push(item);
+      else out.push({ section: item.section, items: [item] });
+    }
+    return out;
+  }, [checklist]);
   // One lookup table for the whole chat keeps the media components simple.
   const assets = useMemo(() => (messages ?? []).flatMap((m) => m.assets ?? []), [messages]);
   const mediaJob = chatId ? mediaJobs[chatId] : undefined;
@@ -155,17 +176,70 @@ export function ReaderView() {
     async (asset: Asset, file: File) => {
       if (!chatId) return;
       const stored = await storeLocalAsset(asset.id, file, settings.maxAssetMB);
-      const current = chats.find((c) => c.id === chatId);
-      await updateChat(chatId, {
-        assetIds: Array.from(new Set([...(current?.assetIds ?? []), stored.id])),
-        mediaBytes: (current?.mediaBytes ?? 0) + stored.bytes,
-        missingMedia: Math.max(0, (current?.missingMedia ?? 1) - 1) || undefined,
-        coverAssetId: current?.coverAssetId ?? (stored.mime.startsWith("image/") ? stored.id : undefined),
-      });
+      await updateChat(chatId, (current) => ({
+        assetIds: Array.from(new Set([...(current.assetIds ?? []), stored.id])),
+        mediaBytes: (current.mediaBytes ?? 0) + stored.bytes,
+        missingMedia: Math.max(0, (current.missingMedia ?? 1) - 1) || undefined,
+        coverAssetId:
+          current.coverAssetId ?? (stored.mime.startsWith("image/") ? stored.id : undefined),
+      }));
       toast.success("Picture added", "It is stored on this device and works offline.");
     },
-    [chatId, chats, settings.maxAssetMB, updateChat, toast],
+    [chatId, settings.maxAssetMB, updateChat, toast],
   );
+  const toggleStudied = useCallback(
+    (itemId: string) => {
+      if (!chatId) return;
+      updateChat(chatId, (current) => {
+        const ticks = current.studied ?? [];
+        return {
+          studied: ticks.includes(itemId)
+            ? ticks.filter((s) => s !== itemId)
+            : [...ticks, itemId],
+        };
+      });
+    },
+    [chatId, updateChat],
+  );
+
+  /*
+   * Chats saved before the checklist existed carry no count, so the library
+   * would show nothing until they were opened. Recording it on first read
+   * backfills them without a migration.
+   */
+  const storedCount = chat?.checklistCount;
+  useEffect(() => {
+    if (!chatId || checklist.length < 2) return;
+    if (storedCount === checklist.length) return;
+    updateRef.current(chatId, { checklistCount: checklist.length });
+  }, [chatId, checklist.length, storedCount]);
+
+  /*
+   * The sheet holds body scroll while it is open and releases it in a cleanup,
+   * which React runs after paint. Scrolling any earlier - on the click, or on
+   * the next frame - is silently swallowed. Waiting for the closed state puts
+   * the jump after that cleanup in the same commit, which is the only ordering
+   * that reliably moves the page.
+   */
+  useEffect(() => {
+    if (checklistOpen || !jumpTo.current) return;
+    const target = document.getElementById(jumpTo.current);
+    jumpTo.current = null;
+    if (!target) return;
+
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const from = window.scrollY;
+    target.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+
+    // Some environments drop a smooth scroll request on the floor. Landing on
+    // the answer matters more than the animation, so check and jump if nothing
+    // has moved.
+    const settle = window.setTimeout(() => {
+      if (window.scrollY === from) target.scrollIntoView({ block: "start" });
+    }, 120);
+    return () => window.clearTimeout(settle);
+  }, [checklistOpen]);
+
   const ordinals = useMemo(() => {
     const map = new Map<string, number>();
     questions.forEach((question, index) => map.set(question.id, index + 1));
@@ -229,11 +303,15 @@ export function ReaderView() {
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Outline"
-            onClick={() => setOutlineOpen(true)}
-            disabled={!questions.length}
+            aria-label="Checklist"
+            onClick={() => setChecklistOpen(true)}
+            disabled={!checklist.length}
+            className="relative"
           >
-            <List size={16} strokeWidth={2.2} />
+            <ListChecks size={16} strokeWidth={2.2} />
+            {progressOf.done ? (
+              <span className="absolute right-0.5 top-0.5 size-1.5 rounded-full bg-green" />
+            ) : null}
           </Button>
           <Button
             variant="ghost"
@@ -286,10 +364,11 @@ export function ReaderView() {
                 showThinking={settings.showThinking}
                 onPin={() => {
                   if (!chat) return;
-                  const pinned = chat.pinned.includes(message.id)
-                    ? chat.pinned.filter((p) => p !== message.id)
-                    : [...chat.pinned, message.id];
-                  updateChat(chat.id, { pinned });
+                  updateChat(chat.id, (current) => ({
+                    pinned: current.pinned.includes(message.id)
+                      ? current.pinned.filter((p) => p !== message.id)
+                      : [...current.pinned, message.id],
+                  }));
                 }}
                 onCopy={async () => {
                   if (await copyText(message.content)) toast.success("Copied");
@@ -301,9 +380,15 @@ export function ReaderView() {
               <p className="text-[11.5px] text-ink-3">
                 End of chat · saved {formatDate(chat?.savedAt)}
               </p>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap justify-center gap-2">
+                {checklist.length >= 2 ? (
+                  <Button variant="primary" onClick={() => setChecklistOpen(true)}>
+                    <ListChecks size={14} strokeWidth={2.2} />
+                    Checklist · {progressOf.done}/{progressOf.total}
+                  </Button>
+                ) : null}
                 <Link href={`/study/session?id=${chat?.id}`}>
-                  <Button variant="primary">
+                  <Button variant={checklist.length >= 2 ? "subtle" : "primary"}>
                     <GraduationCap size={14} strokeWidth={2.2} />
                     Study these questions
                   </Button>
@@ -324,36 +409,90 @@ export function ReaderView() {
         )}
       </article>
 
-      {/* outline */}
+      {/* checklist */}
       <Sheet
-        open={outlineOpen}
-        onClose={() => setOutlineOpen(false)}
-        title="Questions in this chat"
-        description={`${questions.length} ${questions.length === 1 ? "question" : "questions"}`}
+        open={checklistOpen}
+        onClose={() => setChecklistOpen(false)}
+        title="Checklist"
+        description={`${progressOf.done} of ${progressOf.total} ticked off · kept on this device`}
+        footer={
+          progressOf.done ? (
+            <Button onClick={() => chatId && updateChat(chatId, { studied: [] })}>
+              Clear all ticks
+            </Button>
+          ) : null
+        }
       >
-        <ol className="space-y-1">
-          {questions.map((question, index) => (
-            <li key={question.id}>
-              <button
-                type="button"
-                onClick={() => {
-                  setOutlineOpen(false);
-                  document
-                    .getElementById(`msg-${question.id}`)
-                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
-                className="flex w-full gap-2.5 rounded-control p-2 text-left transition-colors hover:bg-hover"
-              >
-                <span className="mt-px font-mono text-[10.5px] tabnums text-ink-3">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <span className="flex-1 text-[12.5px] leading-snug text-ink">
-                  {truncate(stripMarkdown(question.content), 110)}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ol>
+        <div className="mb-3 h-1 overflow-hidden rounded-full bg-line">
+          <div
+            className="h-full rounded-full bg-green transition-[width] duration-200"
+            style={{ width: `${progressOf.percent}%` }}
+          />
+        </div>
+
+        {groups.map((group, index) => {
+          const groupDone = group.items.filter((i) => ticked.has(i.id)).length;
+          return (
+            <section key={group.section ?? index} className={index ? "mt-4" : undefined}>
+              {group.section ? (
+                <p className="mb-1 flex items-baseline gap-2 px-1 text-[11px] font-semibold uppercase tracking-[0.05em] text-ink-2">
+                  <span className="min-w-0 flex-1 truncate">{group.section}</span>
+                  <span className="shrink-0 font-mono tabnums text-ink-3">
+                    {groupDone}/{group.items.length}
+                  </span>
+                </p>
+              ) : null}
+
+              <ol className="space-y-0.5">
+                {group.items.map((item) => {
+                  const done = ticked.has(item.id);
+                  return (
+                    <li key={item.id} className="flex items-start gap-1">
+                      <button
+                        type="button"
+                        role="checkbox"
+                        aria-checked={done}
+                        aria-label={`${done ? "Untick" : "Tick off"} question ${item.number}${
+                          group.section ? ` of ${group.section}` : ""
+                        }`}
+                        onClick={() => toggleStudied(item.id)}
+                        className={cn(
+                          "mt-1.5 flex size-[18px] shrink-0 items-center justify-center rounded-[6px] transition-colors",
+                          done
+                            ? "bg-green text-white"
+                            : "bg-inset text-transparent shadow-hairline hover:bg-hover",
+                        )}
+                      >
+                        <Check size={12} strokeWidth={3} />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          jumpTo.current = item.anchor;
+                          setChecklistOpen(false);
+                        }}
+                        className="flex flex-1 gap-2.5 rounded-control p-1.5 text-left transition-colors hover:bg-hover"
+                      >
+                        <span className="mt-px font-mono text-[10.5px] tabnums text-ink-3">
+                          {String(item.number).padStart(2, "0")}
+                        </span>
+                        <span
+                          className={cn(
+                            "flex-1 text-[12.5px] leading-snug",
+                            done ? "text-ink-3 line-through" : "text-ink",
+                          )}
+                        >
+                          {item.text}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+            </section>
+          );
+        })}
       </Sheet>
 
       {/* typography */}

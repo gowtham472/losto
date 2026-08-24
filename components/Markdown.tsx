@@ -2,7 +2,11 @@
 
 import { Check, Copy, WrapText } from "lucide-react";
 import { memo, useMemo, useState, type ReactNode } from "react";
-import ReactMarkdown, { type Components, defaultUrlTransform } from "react-markdown";
+import ReactMarkdown, {
+  type Components,
+  type ExtraProps,
+  defaultUrlTransform,
+} from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
@@ -146,15 +150,17 @@ export const Markdown = memo(function Markdown({
 
   const components = useMemo<Components>(() => {
     if (!headingPrefix) return COMPONENTS;
-    let counter = 0;
-    const heading = (Tag: "h1" | "h2" | "h3" | "h4") => {
-      function Heading({ children }: { children?: ReactNode }) {
-        counter += 1;
-        return <Tag id={`${headingPrefix}-h${counter}`}>{children}</Tag>;
-      }
-      Heading.displayName = `Markdown${Tag.toUpperCase()}`;
-      return Heading;
-    };
+    /*
+     * The id comes from the source line, never a running count. A counter has to
+     * survive across renders to keep its place, and then every id shifts the
+     * next time this re-renders - the one thing a link pointing into the middle
+     * of an answer cannot tolerate.
+     */
+    const heading = (Tag: "h1" | "h2" | "h3" | "h4") =>
+      function Heading({ node, children }: { children?: ReactNode } & ExtraProps) {
+        const line = node?.position?.start.line;
+        return <Tag id={line ? `${headingPrefix}-h${line}` : undefined}>{children}</Tag>;
+      };
     return {
       ...COMPONENTS,
       h1: heading("h1"),

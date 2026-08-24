@@ -11,6 +11,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { type DownloadOutcome, type DownloadProgress, downloadAssets } from "./assets";
+import { buildChecklist } from "./checklist";
 import * as db from "./db";
 import { originIconAsset } from "./media";
 import type {
@@ -83,7 +84,15 @@ interface LibraryValue {
   mediaJobs: Record<string, DownloadProgress>;
   setSetting: <K extends keyof Settings>(key: K, value: Settings[K]) => void;
   saveExtracted: (result: ExtractResult, options?: SaveOptions) => Promise<string>;
-  updateChat: (id: string, patch: Partial<ChatMeta>) => Promise<void>;
+  /**
+   * Patch a chat record. Pass a function to derive the patch from the stored
+   * record - required for anything that edits a list in place (ticks, pins),
+   * because two taps in one frame would otherwise both read the same "before".
+   */
+  updateChat: (
+    id: string,
+    patch: Partial<ChatMeta> | ((current: ChatMeta) => Partial<ChatMeta>),
+  ) => Promise<void>;
   updateMessages: (id: string, messages: ChatMessage[]) => Promise<void>;
   removeChats: (ids: string[]) => Promise<void>;
   refetchMedia: (
@@ -110,6 +119,9 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [mediaJobs, setMediaJobs] = useState<Record<string, DownloadProgress>>({});
   const bodyCache = useRef(new Map<string, ChatMessage[]>());
+  // One chain per chat, so overlapping writes to the same record are applied in
+  // order instead of racing each other through a read-modify-write.
+  const writes = useRef(new Map<string, Promise<unknown>>());
 
   useEffect(() => {
     // Settings live in localStorage, which cannot be read while rendering on the
@@ -228,6 +240,8 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         excerpt: buildExcerpt(messages),
         note: options.note,
         pinned: [],
+        studied: [],
+        checklistCount: buildChecklist(messages).length || undefined,
       };
 
       // The words are what matter, so the chat is saved and readable straight
@@ -306,16 +320,28 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   );
 
   const updateChat = useCallback<LibraryValue["updateChat"]>(async (id, patch) => {
-    let next: ChatMeta | undefined;
+    const resolve = (current: ChatMeta) =>
+      typeof patch === "function" ? patch(current) : patch;
+
+    // Optimistic, so a tick or a pin lands on the same frame as the tap. The
+    // updater form means a second tap sees the first one's result.
     setChats((prev) =>
-      prev.map((c) => {
-        if (c.id !== id) return c;
-        next = { ...c, ...patch, updatedAt: Date.now() };
-        return next;
-      }),
+      prev.map((c) => (c.id === id ? { ...c, ...resolve(c), updatedAt: Date.now() } : c)),
     );
-    const current = next ?? (await db.getChat(id));
-    if (current) await db.putChat({ ...current, ...patch, updatedAt: Date.now() });
+
+    const queued = (writes.current.get(id) ?? Promise.resolve()).then(async () => {
+      const stored = await db.getChat(id);
+      if (!stored) return;
+      const updated: ChatMeta = { ...stored, ...resolve(stored), updatedAt: Date.now() };
+      await db.putChat(updated);
+      // The stored record is authoritative - it has every queued patch applied.
+      setChats((prev) => prev.map((c) => (c.id === id ? updated : c)));
+    });
+    writes.current.set(
+      id,
+      queued.catch(() => {}),
+    );
+    await queued;
   }, []);
 
   const updateMessages = useCallback<LibraryValue["updateMessages"]>(
@@ -330,6 +356,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
         wordCount: words,
         readMinutes: readingMinutes(words),
         excerpt: buildExcerpt(messages),
+        checklistCount: buildChecklist(messages).length || undefined,
         updatedAt: Date.now(),
       };
       await db.putChat(updated, { id, messages });

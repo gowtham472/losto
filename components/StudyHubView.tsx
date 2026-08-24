@@ -89,8 +89,16 @@ export function StudyHubView() {
                         {chat.title}
                       </p>
                       <p className="truncate text-[11.5px] text-ink-2">
-                        {Math.max(1, Math.floor(chat.messageCount / 2))} question cards ·{" "}
-                        {relativeTime(chat.savedAt)}
+                        {chat.checklistCount && chat.checklistCount >= 2
+                          ? `${chat.checklistCount} questions`
+                          : `${Math.max(1, Math.floor(chat.messageCount / 2))} question cards`}
+                        {chat.studied?.length ? (
+                          <span className="text-green">
+                            {" "}
+                            · {chat.studied.length} ticked off
+                          </span>
+                        ) : null}{" "}
+                        · {relativeTime(chat.savedAt)}
                       </p>
                     </div>
                     <GraduationCap size={15} strokeWidth={2.1} className="shrink-0 text-ink-3" />

@@ -14,7 +14,9 @@ const SPEAKER = new RegExp(
 const USER_SPEAKERS = /^(you|you said|user|q|question)$/i;
 
 export function splitPastedTranscript(text: string): ChatMessage[] {
-  const lines = text.replace(/\r\n/g, "\n").split("\n");
+  // A lone \r is a line ending too, and is what a PDF or Word copy leaves
+  // behind. Normalising here keeps the stored markdown to one convention.
+  const lines = text.replace(/\r\n?/g, "\n").split("\n");
   const turns: { role: ChatMessage["role"]; lines: string[] }[] = [];
 
   for (const line of lines) {
