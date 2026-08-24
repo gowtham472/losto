@@ -1,6 +1,14 @@
 import type { ChatMessage, ExtractResult, Role, SourceId } from "../types";
 import { uid } from "../utils";
-import { collectEmbeddedJson, htmlToMarkdown, mainContent, pageTitle, stripTags } from "./html";
+import { type ArticleMeta, extractArticle } from "./article";
+import {
+  collectEmbeddedJson,
+  htmlToMarkdown,
+  mainContent,
+  pageTitle,
+  siteIcon,
+  stripTags,
+} from "./html";
 import { ExtractProblem, fetchPage, statusProblem } from "./http";
 
 const ROLE_KEYS = ["role", "sender", "author", "speaker", "from"];
@@ -28,13 +36,49 @@ export async function parseGeneric(url: string, source: SourceId): Promise<Extra
         source,
         sourceUrl: page.finalUrl,
         messages,
+        favicon: siteIcon(page.body, page.finalUrl),
         strategy: "generic:embedded-json",
-        warning:
+        warning: notes(
           "Read from the page's embedded data. Check that nothing important is missing before you rely on it offline.",
+          page.compatibility ? COMPATIBILITY_NOTE : undefined,
+        ),
       };
     }
   }
 
+  // Blogs and docs: score the page, keep the writing, resolve lazy media.
+  const article = extractArticle(page.body, page.finalUrl);
+  if (article) {
+    const readable = htmlToMarkdown(article.html);
+    if (stripTags(readable).length >= 120) {
+      return {
+        ok: true,
+        title: article.meta.title || title,
+        source,
+        sourceUrl: article.meta.canonical ?? page.finalUrl,
+        originalAt: article.meta.publishedAt,
+        messages: [
+          {
+            id: uid("m"),
+            role: "assistant",
+            content: withCredit(readable, article.meta, page.finalUrl),
+            assets: article.assets.length ? article.assets : undefined,
+          },
+        ],
+        assets: article.assets.length ? article.assets : undefined,
+        favicon: siteIcon(page.body, page.finalUrl),
+        strategy: "article:readable",
+        warning: notes(
+          article.confidence < 0.35
+            ? "Losto was not fully certain which part of the page was the article, so some of the site's navigation may have come along."
+            : undefined,
+          page.compatibility ? COMPATIBILITY_NOTE : undefined,
+        ),
+      };
+    }
+  }
+
+  // Nothing scored as an article - fall back to the whole main region.
   const markdown = htmlToMarkdown(mainContent(page.body));
   const plain = stripTags(markdown);
   if (plain.length < 120) {
@@ -51,10 +95,58 @@ export async function parseGeneric(url: string, source: SourceId): Promise<Extra
     source,
     sourceUrl: page.finalUrl,
     messages: [{ id: uid("m"), role: "assistant", content: markdown }],
+    favicon: siteIcon(page.body, page.finalUrl),
     strategy: "generic:article",
-    warning:
+    warning: notes(
       "Saved as a single article - this source has no public chat API, so the question/answer split may be missing.",
+      page.compatibility ? COMPATIBILITY_NOTE : undefined,
+    ),
   };
+}
+
+/** Joins the article-confidence note with the compatibility note, if any. */
+function notes(...parts: (string | undefined)[]): string | undefined {
+  const kept = parts.filter(Boolean);
+  return kept.length ? kept.join(" ") : undefined;
+}
+
+/**
+ * The site refused an identified request, so it was fetched as a browser. Worth
+ * saying plainly rather than quietly switching disguises.
+ */
+const COMPATIBILITY_NOTE =
+  "This site refused a request that identified itself, so Losto fetched it as a browser would. Its robots.txt allows this page.";
+
+/**
+ * Every saved article opens with who wrote it and where it came from. Keeping
+ * the credit attached is both the decent thing to do and what makes a stored
+ * copy read as personal reading rather than an anonymous reproduction.
+ */
+function withCredit(markdown: string, meta: ArticleMeta, fallbackUrl: string): string {
+  const origin = meta.canonical ?? fallbackUrl;
+  const bits: string[] = [];
+  if (meta.author) bits.push(`By ${meta.author}`);
+  if (meta.siteName) bits.push(meta.siteName);
+  if (meta.publishedAt) {
+    bits.push(new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" }).format(meta.publishedAt));
+  }
+
+  const credit = [
+    bits.length ? `> ${bits.join(" · ")}` : null,
+    `> Saved from [${hostOf(origin)}](${origin})`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  return `${credit}\n\n${markdown.trim()}`;
+}
+
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
 }
 
 /** Finds the longest array that looks like a list of chat turns. */

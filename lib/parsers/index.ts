@@ -1,5 +1,6 @@
+import { dedupeAssets, makeAsset, rewriteMedia } from "../media";
 import { detectSource } from "../sources";
-import type { ExtractResult, SourceId } from "../types";
+import type { Asset, ChatMessage, ExtractResult, SourceId } from "../types";
 import { deriveTitle } from "../utils";
 import { parseChatGpt } from "./chatgpt";
 import { parseClaude } from "./claude";
@@ -25,10 +26,65 @@ export async function extractChat(rawUrl: string): Promise<ExtractResult> {
 
   const source: SourceId = detectSource(url.href);
   const result = await run(source, url.href);
+  const withMedia = collectMedia(result, url.href);
 
   // Every source occasionally omits a title; the opening question is a fine one.
-  const title = result.title?.trim() || deriveTitle(result.messages);
-  return { ...result, title, source: result.source ?? source };
+  const title = withMedia.title?.trim() || deriveTitle(withMedia.messages);
+  return { ...withMedia, title, source: withMedia.source ?? source };
+}
+
+/**
+ * One pass over every message that turns pictures, clips and player links into
+ * `losto-asset:` references and lifts the media list to the top level, so the
+ * client has a single download queue regardless of which parser ran.
+ */
+function collectMedia(result: ExtractResult, baseUrl: string): ExtractResult {
+  const all: Asset[] = [];
+  // The site's own mark, so a saved item shows who published it rather than a
+  // generic tile. Parsers that read HTML supply a better icon than the default.
+  const favicon = result.favicon ?? defaultFavicon(baseUrl);
+  if (favicon) all.push(favicon);
+
+  const messages: ChatMessage[] = result.messages.map((message) => {
+    const body = rewriteMedia(message.content, { baseUrl });
+    const thinking = message.thinking
+      ? rewriteMedia(message.thinking, { baseUrl })
+      : null;
+
+    // Assets a parser attached directly (asset pointers, attachments) come first.
+    const assets = dedupeAssets([
+      ...(message.assets ?? []),
+      ...body.assets,
+      ...(thinking?.assets ?? []),
+    ]);
+    all.push(...assets);
+
+    return {
+      ...message,
+      content: body.markdown,
+      thinking: thinking ? thinking.markdown : message.thinking,
+      assets: assets.length ? assets : undefined,
+    };
+  });
+
+  const assets = dedupeAssets(all);
+  return { ...result, messages, assets: assets.length ? assets : undefined, favicon };
+}
+
+/** Every site answers /favicon.ico, so there is always something to try. */
+function defaultFavicon(baseUrl: string): Asset | undefined {
+  try {
+    const { origin, hostname } = new URL(baseUrl);
+    return (
+      makeAsset({
+        url: `${origin}/favicon.ico`,
+        kind: "image",
+        alt: hostname.replace(/^www\./, ""),
+      }) ?? undefined
+    );
+  } catch {
+    return undefined;
+  }
 }
 
 function run(source: SourceId, url: string): Promise<ExtractResult> {
@@ -45,7 +101,7 @@ function run(source: SourceId, url: string): Promise<ExtractResult> {
 }
 
 /** Blocks SSRF against the deployment's own network. */
-function isPrivateHost(hostname: string): boolean {
+export function isPrivateHost(hostname: string): boolean {
   const h = hostname.toLowerCase();
   if (h === "localhost" || h.endsWith(".localhost") || h.endsWith(".local") || h === "[::1]") {
     return true;

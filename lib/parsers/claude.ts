@@ -1,6 +1,8 @@
-import type { ChatMessage, ExtractResult } from "../types";
+import { appendAssets, dedupeAssets, kindForUrl, makeAsset } from "../media";
+import type { Asset, ChatMessage, ExtractResult } from "../types";
 import { uid } from "../utils";
-import { collectEmbeddedJson, findNodes } from "./html";
+import { collectEmbeddedJson, findNodes, siteIcon } from "./html";
+import { decodeReactRouterPage } from "./turbostream";
 import { ExtractProblem, fetchPage, statusProblem } from "./http";
 
 function snapshotId(url: string): string | null {
@@ -18,42 +20,41 @@ export async function parseClaude(url: string): Promise<ExtractResult> {
     );
   }
 
-  const api = await fetchPage(`https://claude.ai/api/chat_snapshots/${id}`, {
-    accept: "application/json",
-    referer: `https://claude.ai/share/${id}`,
-  });
-
-  if (api.status === 200) {
-    try {
-      const data = JSON.parse(api.body) as Record<string, unknown>;
-      const built = fromSnapshot(data, url);
-      if (built) return { ...built, strategy: "claude:snapshot-api" };
-    } catch {
-      /* fall through to the page */
-    }
-  } else if (api.status === 404) {
+  /*
+   * claude.ai's robots.txt allows `/share/` but disallows `/api/*`, so the
+   * snapshot endpoint is off limits and the shared page is read instead.
+   */
+  const page = await fetchPage(`https://claude.ai/share/${id}`);
+  if (page.status === 404) {
     throw new ExtractProblem(
       "not_found",
       "That shared Claude chat no longer exists.",
       "Ask for a fresh share link, or paste the text instead.",
     );
   }
-
-  const page = await fetchPage(`https://claude.ai/share/${id}`);
   if (page.status !== 200) throw statusProblem(page.status, "claude");
 
   for (const blob of collectEmbeddedJson(page.body)) {
     const [node] = findNodes(blob, (n) => Array.isArray(n.chat_messages), 1);
     if (node) {
       const built = fromSnapshot(node, url);
-      if (built) return { ...built, strategy: "claude:embedded" };
+      if (built) return { ...built, strategy: "claude:share-page", favicon: siteIcon(page.body, page.finalUrl) };
+    }
+  }
+
+  const routed = decodeReactRouterPage(page.body);
+  if (routed) {
+    const [node] = findNodes(routed, (n) => Array.isArray(n.chat_messages), 1);
+    if (node) {
+      const built = fromSnapshot(node, url);
+      if (built) return { ...built, strategy: "claude:share-stream", favicon: siteIcon(page.body, page.finalUrl) };
     }
   }
 
   throw new ExtractProblem(
     "empty",
     "Could not read the messages from that Claude link.",
-    "Claude only exposes chats that were explicitly shared publicly.",
+    "Claude only exposes chats that were explicitly shared publicly. If it is shared and this still fails, paste the text instead.",
   );
 }
 
@@ -79,16 +80,17 @@ function fromSnapshot(
     const sender = String(m.sender ?? m.role ?? "").toLowerCase();
     const role = sender === "human" || sender === "user" ? "user" : "assistant";
 
-    const { text, thinking } = readBlocks(m);
+    const { text, thinking, assets } = readBlocks(m);
     const body = text.trim() || String(m.text ?? "").trim();
-    if (!body && !thinking) continue;
+    if (!body && !thinking && !assets.length) continue;
 
     messages.push({
       id: String(m.uuid ?? m.id ?? uid("m")),
       role,
-      content: body,
+      content: appendAssets(body, assets),
       thinking: thinking || undefined,
       createdAt: toTime(m.created_at),
+      assets: assets.length ? assets : undefined,
     });
   }
 
@@ -106,10 +108,19 @@ function fromSnapshot(
   };
 }
 
-function readBlocks(message: Record<string, unknown>): { text: string; thinking: string } {
+function readBlocks(message: Record<string, unknown>): {
+  text: string;
+  thinking: string;
+  assets: Asset[];
+} {
+  const assets = readFiles(message);
   const content = message.content;
   if (!Array.isArray(content)) {
-    return { text: typeof message.text === "string" ? message.text : "", thinking: "" };
+    return {
+      text: typeof message.text === "string" ? message.text : "",
+      thinking: "",
+      assets,
+    };
   }
 
   const parts: string[] = [];
@@ -124,6 +135,11 @@ function readBlocks(message: Record<string, unknown>): { text: string; thinking:
       case "thinking":
         if (block.thinking) thoughts.push(block.thinking);
         break;
+      case "image": {
+        const asset = readImageBlock(entry as Record<string, unknown>);
+        if (asset) assets.push(asset);
+        break;
+      }
       // Artifacts arrive as tool calls; keep the document, drop the plumbing.
       case "tool_use": {
         const input = (entry as Record<string, unknown>).input as
@@ -146,7 +162,50 @@ function readBlocks(message: Record<string, unknown>): { text: string; thinking:
     }
   }
 
-  return { text: parts.join("\n\n"), thinking: thoughts.join("\n\n") };
+  return { text: parts.join("\n\n"), thinking: thoughts.join("\n\n"), assets: dedupeAssets(assets) };
+}
+
+/** Inline image blocks arrive either as a link or as base64 bytes. */
+function readImageBlock(block: Record<string, unknown>): Asset | null {
+  const source = (block.source ?? {}) as Record<string, unknown>;
+  const mime = typeof source.media_type === "string" ? source.media_type : "image/png";
+  const alt = typeof block.alt === "string" ? block.alt : "Image from the chat";
+
+  if (typeof source.url === "string" && /^https?:\/\//.test(source.url)) {
+    return makeAsset({ url: source.url, kind: "image", mime, alt });
+  }
+  if (source.type === "base64" && typeof source.data === "string" && source.data.length) {
+    // A data URL is downloadable by the browser without going through the proxy.
+    return makeAsset({ url: `data:${mime};base64,${source.data}`, kind: "image", mime, alt });
+  }
+  return null;
+}
+
+/** Uploads attached to a turn sit alongside the content blocks. */
+function readFiles(message: Record<string, unknown>): Asset[] {
+  const out: Asset[] = [];
+  for (const key of ["files", "attachments", "files_v2"]) {
+    const list = message[key];
+    if (!Array.isArray(list)) continue;
+    for (const raw of list) {
+      const file = raw as Record<string, unknown>;
+      const href =
+        pickString(file.preview_url) ??
+        pickString(file.file_url) ??
+        pickString(file.url) ??
+        pickString(file.thumbnail_url);
+      if (!href) continue;
+      const url = href.startsWith("http") ? href : `https://claude.ai${href}`;
+      const name = pickString(file.file_name) ?? pickString(file.name) ?? "Attached file";
+      const asset = makeAsset({ url, alt: name, kind: kindForUrl(url) ?? "image" });
+      if (asset) out.push(asset);
+    }
+  }
+  return out;
+}
+
+function pickString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value : undefined;
 }
 
 function toTime(value: unknown): number | undefined {

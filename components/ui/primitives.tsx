@@ -68,8 +68,8 @@ export function Chip({
     <button
       type="button"
       className={cn(
-        "inline-flex h-7 shrink-0 select-none items-center gap-1.5 rounded-full px-2.5",
-        "text-[12px] font-medium transition-[background-color,box-shadow,color] duration-150",
+        "inline-flex h-8 shrink-0 select-none items-center gap-1.5 rounded-full px-3",
+        "text-[12.5px] font-medium transition-[background-color,box-shadow,color] duration-150",
         active
           ? "bg-ink text-page shadow-btn"
           : "bg-surface text-ink-2 shadow-btn hover:bg-hover hover:text-ink",

@@ -1,0 +1,272 @@
+import { AlertTriangle } from "lucide-react";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { PageHeader } from "@/components/AppShell";
+import { Card, SectionTitle, Well } from "@/components/ui/primitives";
+import { OPERATOR, isConfigured } from "@/lib/legal";
+
+export const metadata: Metadata = {
+  title: "Privacy and terms",
+  description: "How Losto handles your data, and the terms you use it under.",
+};
+
+export default function LegalPage() {
+  return (
+    <>
+      <PageHeader
+        title="Privacy and terms"
+        subtitle={`Effective ${OPERATOR.effectiveDate} · ${OPERATOR.jurisdiction}`}
+      />
+
+      <div className="mx-auto max-w-3xl space-y-7 px-4 pb-14 lg:px-8">
+        {!isConfigured ? (
+          <Well className="flex items-start gap-2.5 p-3">
+            <AlertTriangle size={15} strokeWidth={2.1} className="mt-px shrink-0 text-orange" />
+            <p className="text-[12.5px] leading-relaxed text-ink-2">
+              <strong className="font-semibold text-ink">Not ready to publish.</strong> The
+              publisher name, contact address and effective date are still placeholders. Set them
+              before release — a privacy notice without a reachable contact does not meet the DPDP
+              Act&apos;s requirements.
+            </p>
+          </Well>
+        ) : null}
+
+        {/* ------------------------------------------------------------ */}
+        <section>
+          <SectionTitle index="01">The short version</SectionTitle>
+          <Card className="space-y-2.5 p-4 text-[13px] leading-relaxed text-ink-2">
+            <p>
+              Losto keeps everything you save in your own browser&apos;s storage on your own
+              device. Your library is never uploaded, and there is no account to create.
+            </p>
+            <p>
+              The one time Losto touches the network on your behalf is when you paste a link: the
+              app fetches that page so it can be read offline. The address you paste is used for
+              that request and nothing else.
+            </p>
+            <p>
+              Deleting a chat removes it, and its pictures, from the device. Clearing the app&apos;s
+              data or uninstalling it erases everything.
+            </p>
+          </Card>
+        </section>
+
+        {/* ------------------------------------------------------------ */}
+        <section>
+          <SectionTitle index="02">Who is responsible</SectionTitle>
+          <Card className="space-y-2.5 p-4 text-[13px] leading-relaxed text-ink-2">
+            <p>
+              <strong className="font-semibold text-ink">{OPERATOR.name}</strong> publishes Losto
+              and is the Data Fiduciary for any personal data the service processes, as those terms
+              are used in India&apos;s Digital Personal Data Protection Act, 2023.
+            </p>
+            <Field label="Contact" value={OPERATOR.email} />
+            <Field label="Grievance Officer" value={OPERATOR.grievanceOfficer} />
+            <p>
+              Write to the address above with any question or complaint about your data. You will
+              get a reply within {OPERATOR.responseDays} days. If the answer does not satisfy you,
+              you may complain to the Data Protection Board of India.
+            </p>
+          </Card>
+        </section>
+
+        {/* ------------------------------------------------------------ */}
+        <section>
+          <SectionTitle index="03">What is processed, and why</SectionTitle>
+          <Card className="divide-y divide-line">
+            <Item
+              title="Your saved library"
+              purpose="So you can read your material without a connection."
+              detail="Chats, articles, notes, tags, subjects, pictures and clips. Stored only in your browser's local database on your device. It is never transmitted to us and we cannot see it."
+              basis="Not collected by us at all."
+            />
+            <Item
+              title="Links you paste"
+              purpose="To fetch the page you asked for."
+              detail="The address is sent to the Losto server, used to make that one request, and returned to your device. It is not stored in a database or used to build a profile."
+              basis="Your consent, given by pasting the link and asking for it to be saved."
+            />
+            <Item
+              title="Ordinary connection records"
+              purpose="Keeping the service running and secure."
+              detail="Like any website, the hosting provider records the IP address, time and page of each request in its server logs. These are used only to operate the service and to stop abuse, and are kept for a short period before deletion."
+              basis="Legitimate use — running and securing the service you asked for."
+            />
+            <Item
+              title="Settings on your device"
+              purpose="Remembering your theme, text size and reading preferences."
+              detail="Held in your browser's local storage. Not personal data about you, and never sent anywhere."
+              basis="Not collected by us at all."
+            />
+          </Card>
+          <p className="mt-2.5 px-1 text-[12px] leading-relaxed text-ink-3">
+            Losto has no advertising, no analytics, no tracking pixels, no third-party cookies and
+            no data sharing or sale. Nothing is used to train any model.
+          </p>
+        </section>
+
+        {/* ------------------------------------------------------------ */}
+        <section>
+          <SectionTitle index="04">Your rights</SectionTitle>
+          <Card className="space-y-2.5 p-4 text-[13px] leading-relaxed text-ink-2">
+            <p>Under the DPDP Act you may:</p>
+            <ul className="ml-4 list-disc space-y-1.5">
+              <li>
+                <strong className="font-semibold text-ink">Access</strong> a summary of your data.
+                Because your library lives on your device, Settings → Export gives you the complete
+                copy immediately.
+              </li>
+              <li>
+                <strong className="font-semibold text-ink">Correct or complete</strong> it — every
+                title, tag and note is editable in the app.
+              </li>
+              <li>
+                <strong className="font-semibold text-ink">Erase</strong> it. Delete any chat, or
+                use Settings → Delete everything. No request to us is needed, and nothing is
+                retained elsewhere.
+              </li>
+              <li>
+                <strong className="font-semibold text-ink">Nominate</strong> another person to
+                exercise these rights if you die or become incapacitated. Because your data sits on
+                your own device, this is handled by whoever can unlock the device.
+              </li>
+              <li>
+                <strong className="font-semibold text-ink">Complain</strong> — to the contact above,
+                and then to the Data Protection Board of India.
+              </li>
+              <li>
+                <strong className="font-semibold text-ink">Withdraw consent</strong> at any time by
+                not pasting further links, and by deleting what you have saved.
+              </li>
+            </ul>
+          </Card>
+        </section>
+
+        {/* ------------------------------------------------------------ */}
+        <section>
+          <SectionTitle index="05">Children</SectionTitle>
+          <Card className="space-y-2.5 p-4 text-[13px] leading-relaxed text-ink-2">
+            <p>
+              The DPDP Act treats anyone under 18 as a child and requires verifiable parental
+              consent before their personal data is processed. It also forbids tracking children
+              and advertising to them.
+            </p>
+            <p>
+              Losto is built so this question stays simple: it creates no account, asks for no name,
+              age, email or phone number, builds no profile, shows no advertising and tracks nobody.
+              A student&apos;s library never leaves their own device.
+            </p>
+            <p>
+              If you are under 18, please use Losto with your parent or guardian&apos;s knowledge.
+            </p>
+          </Card>
+        </section>
+
+        {/* ------------------------------------------------------------ */}
+        <section>
+          <SectionTitle index="06">Content you save</SectionTitle>
+          <Card className="space-y-2.5 p-4 text-[13px] leading-relaxed text-ink-2">
+            <p>
+              Articles, conversations, pictures and clips you save stay the property of whoever
+              created them. Losto makes a personal copy on your device for your own reading, keeps
+              the author and the original link attached to it, and never republishes it.
+            </p>
+            <p>
+              Please use it that way. Do not use Losto to copy material you are not allowed to read,
+              to get around a paywall or login, or to republish someone else&apos;s work as your
+              own. Losto will not fetch a page whose site asks automated tools to stay away, and it
+              will not attempt to bypass any access control.
+            </p>
+            <p>
+              If you own content that someone has saved and you believe it is being misused, write
+              to {OPERATOR.email} and it will be looked into.
+            </p>
+          </Card>
+        </section>
+
+        {/* ------------------------------------------------------------ */}
+        <section>
+          <SectionTitle index="07">Terms of use</SectionTitle>
+          <Card className="space-y-2.5 p-4 text-[13px] leading-relaxed text-ink-2">
+            <p>
+              Losto is provided as-is, without warranty. It is a reading tool: it does not check
+              whether what an AI assistant told you is correct, and you should not rely on saved
+              answers as fact without checking them.
+            </p>
+            <p>
+              Because your library is stored only on your device, it can be lost if you clear your
+              browser data, uninstall the app, or lose the device. Export a backup from Settings if
+              your material matters to you. {OPERATOR.name} is not liable for lost saved content.
+            </p>
+            <p>
+              You remain responsible for how you use material you save, including for your
+              institution&apos;s rules on academic honesty.
+            </p>
+            <p>These terms are governed by the laws of {OPERATOR.jurisdiction}.</p>
+          </Card>
+        </section>
+
+        {/* ------------------------------------------------------------ */}
+        <section>
+          <SectionTitle index="08">Open-source components</SectionTitle>
+          <Card className="space-y-2.5 p-4 text-[13px] leading-relaxed text-ink-2">
+            <p>
+              Losto is built on open-source software and open-licensed typefaces, each of which
+              remains under its own licence. The full list ships with the app in{" "}
+              <code className="rounded bg-inset px-1 py-0.5 font-mono text-[11.5px] shadow-hairline">
+                THIRD-PARTY-NOTICES.md
+              </code>
+              .
+            </p>
+            <p>
+              Saved items show the icon of the site they came from, fetched from that site, purely
+              to tell you where something came from. Those names and marks belong to their owners,
+              who neither endorse nor are affiliated with Losto.
+            </p>
+          </Card>
+        </section>
+
+        <p className="px-1 text-[12px] text-ink-3">
+          Questions about any of this: {OPERATOR.email} ·{" "}
+          <Link href="/settings" className="underline">
+            back to Settings
+          </Link>
+        </p>
+      </div>
+    </>
+  );
+}
+
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <p className="flex flex-wrap gap-x-2 text-[12.5px]">
+      <span className="font-semibold text-ink">{label}:</span>
+      <span className="font-mono text-ink-2">{value}</span>
+    </p>
+  );
+}
+
+function Item({
+  title,
+  purpose,
+  detail,
+  basis,
+}: {
+  title: string;
+  purpose: string;
+  detail: string;
+  basis: string;
+}) {
+  return (
+    <div className="space-y-1 p-4">
+      <p className="text-[13px] font-semibold tracking-[-0.015em] text-ink">{title}</p>
+      <p className="text-[12.5px] leading-relaxed text-ink-2">{detail}</p>
+      <dl className="grid gap-x-3 gap-y-0.5 pt-1 text-[11.5px] sm:grid-cols-[auto_1fr]">
+        <dt className="font-semibold uppercase tracking-[0.05em] text-ink-3">Purpose</dt>
+        <dd className="text-ink-2">{purpose}</dd>
+        <dt className="font-semibold uppercase tracking-[0.05em] text-ink-3">Basis</dt>
+        <dd className="text-ink-2">{basis}</dd>
+      </dl>
+    </div>
+  );
+}

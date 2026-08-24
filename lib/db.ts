@@ -5,12 +5,22 @@
 import type { ChatBody, ChatMeta, Collection } from "./types";
 
 const DB_NAME = "losto";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export const STORE_CHATS = "chats";
 export const STORE_BODIES = "bodies";
 export const STORE_COLLECTIONS = "collections";
 export const STORE_KV = "kv";
+export const STORE_ASSETS = "assets";
+
+/** A downloaded picture or clip, kept as bytes so it survives offline. */
+export interface StoredAsset {
+  id: string;
+  blob: Blob;
+  mime: string;
+  bytes: number;
+  savedAt: number;
+}
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -39,6 +49,10 @@ function openDB(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(STORE_KV)) {
         db.createObjectStore(STORE_KV);
+      }
+      // Added in v2 — existing libraries upgrade in place, keeping their chats.
+      if (!db.objectStoreNames.contains(STORE_ASSETS)) {
+        db.createObjectStore(STORE_ASSETS, { keyPath: "id" });
       }
     };
 
@@ -155,6 +169,68 @@ export function deleteChats(ids: string[]): Promise<void> {
 }
 
 /* -------------------------------------------------------------------------- */
+/* assets                                                                     */
+/* -------------------------------------------------------------------------- */
+
+export function getAsset(id: string): Promise<StoredAsset | undefined> {
+  return tx(STORE_ASSETS, "readonly", (t) =>
+    wrap(t.objectStore(STORE_ASSETS).get(id) as IDBRequest<StoredAsset | undefined>),
+  );
+}
+
+export function hasAsset(id: string): Promise<boolean> {
+  return tx(STORE_ASSETS, "readonly", (t) =>
+    wrap(t.objectStore(STORE_ASSETS).count(id)).then((n) => n > 0),
+  );
+}
+
+export function putAsset(asset: StoredAsset): Promise<void> {
+  return tx(STORE_ASSETS, "readwrite", (t) =>
+    wrap(t.objectStore(STORE_ASSETS).put(asset)).then(() => undefined),
+  );
+}
+
+/** Ids and sizes only — reading every blob just to total them would be wasteful. */
+export function assetSizes(): Promise<{ id: string; bytes: number }[]> {
+  return tx(STORE_ASSETS, "readonly", (t) =>
+    wrap(t.objectStore(STORE_ASSETS).getAll() as IDBRequest<StoredAsset[]>).then((all) =>
+      all.map((a) => ({ id: a.id, bytes: a.bytes })),
+    ),
+  );
+}
+
+/**
+ * Drops blobs no remaining chat points at. Called after deletions so media does
+ * not quietly fill the device.
+ */
+export function pruneAssets(): Promise<number> {
+  return tx([STORE_CHATS, STORE_ASSETS], "readwrite", async (t) => {
+    const chats = await wrap(t.objectStore(STORE_CHATS).getAll() as IDBRequest<ChatMeta[]>);
+    const referenced = new Set<string>();
+    for (const chat of chats) {
+      for (const id of chat.assetIds ?? []) referenced.add(id);
+    }
+
+    const store = t.objectStore(STORE_ASSETS);
+    const ids = await wrap(store.getAllKeys() as IDBRequest<IDBValidKey[]>);
+    let removed = 0;
+    for (const key of ids) {
+      if (!referenced.has(String(key))) {
+        await wrap(store.delete(key));
+        removed++;
+      }
+    }
+    return removed;
+  });
+}
+
+export function clearAssets(): Promise<void> {
+  return tx(STORE_ASSETS, "readwrite", (t) =>
+    wrap(t.objectStore(STORE_ASSETS).clear()).then(() => undefined),
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* collections                                                                */
 /* -------------------------------------------------------------------------- */
 
@@ -206,11 +282,16 @@ export function kvSet<T>(key: string, value: T): Promise<void> {
 }
 
 export function clearAll(): Promise<void> {
-  return tx([STORE_CHATS, STORE_BODIES, STORE_COLLECTIONS], "readwrite", async (t) => {
-    await wrap(t.objectStore(STORE_CHATS).clear());
-    await wrap(t.objectStore(STORE_BODIES).clear());
-    await wrap(t.objectStore(STORE_COLLECTIONS).clear());
-  });
+  return tx(
+    [STORE_CHATS, STORE_BODIES, STORE_COLLECTIONS, STORE_ASSETS],
+    "readwrite",
+    async (t) => {
+      await wrap(t.objectStore(STORE_CHATS).clear());
+      await wrap(t.objectStore(STORE_BODIES).clear());
+      await wrap(t.objectStore(STORE_COLLECTIONS).clear());
+      await wrap(t.objectStore(STORE_ASSETS).clear());
+    },
+  );
 }
 
 export async function estimateStorage(): Promise<{ usage: number; quota: number } | null> {

@@ -5,6 +5,7 @@ import {
   ArrowRight,
   CheckCircle2,
   ClipboardPaste,
+  Image as ImageIcon,
   Link2,
   Loader2,
   Sparkles,
@@ -17,6 +18,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import { PageHeader } from "@/components/AppShell";
 import { Markdown } from "@/components/Markdown";
+import { AssetProvider } from "@/components/Media";
 import { SourceMark } from "@/components/SourceMark";
 import {
   Button,
@@ -29,11 +31,13 @@ import {
   Well,
 } from "@/components/ui/primitives";
 import { useToast } from "@/components/ui/toast";
+import type { DownloadProgress } from "@/lib/assets";
+import { dedupeAssets, rewriteMedia } from "@/lib/media";
 import { splitPastedTranscript, titleFromPaste } from "@/lib/paste";
 import { COLLECTION_COLORS, SOURCES, detectSource, sourceInfo } from "@/lib/sources";
 import { useLibrary, useOnline } from "@/lib/store";
-import type { ExtractError, ExtractResult } from "@/lib/types";
-import { cn, countWords, extractUrls, readClipboard, readingMinutes } from "@/lib/utils";
+import type { Asset, ExtractError, ExtractResult } from "@/lib/types";
+import { cn, countWords, extractUrls, formatBytes, readClipboard, readingMinutes } from "@/lib/utils";
 
 type Item = {
   url: string;
@@ -56,6 +60,7 @@ export function ImportView() {
   const [input, setInput] = useState(() => params.get("url") ?? params.get("text") ?? "");
   const [items, setItems] = useState<Item[]>([]);
   const [busy, setBusy] = useState(false);
+  const [media, setMedia] = useState<DownloadProgress | null>(null);
 
   const [pasteTitle, setPasteTitle] = useState("");
   const [pasteBody, setPasteBody] = useState("");
@@ -128,24 +133,43 @@ export function ImportView() {
     if (!ready.length) return;
     setBusy(true);
     let lastId = "";
+    let mediaCount = 0;
     for (const item of ready) {
       if (!item.result) continue;
-      lastId = await saveExtracted(item.result, { collectionId, tags: parsedTags() });
+      mediaCount += item.result.assets?.length ?? 0;
+      lastId = await saveExtracted(item.result, {
+        collectionId,
+        tags: parsedTags(),
+        onMedia: setMedia,
+      });
     }
+    setMedia(null);
     setBusy(false);
     toast.success(
       ready.length === 1 ? "Saved to your device" : `${ready.length} chats saved to your device`,
-      "Available offline from now on.",
+      mediaCount
+        ? `Downloading ${mediaCount} media ${mediaCount === 1 ? "file" : "files"} in the background — read on while it finishes.`
+        : "Available offline from now on.",
     );
     router.push(ready.length === 1 ? `/chat?id=${lastId}` : "/");
   };
 
   const savePasted = async () => {
-    const messages = splitPastedTranscript(pasteBody);
-    if (!messages.length) {
+    const parsed = splitPastedTranscript(pasteBody);
+    if (!parsed.length) {
       toast.error("Nothing to save", "Paste the chat text first.");
       return;
     }
+
+    // Pasted markdown gets the same media treatment as a fetched chat, so any
+    // pictures or clips in it are stored for offline too.
+    const all: Asset[] = [];
+    const messages = parsed.map((message) => {
+      const { markdown, assets } = rewriteMedia(message.content);
+      all.push(...assets);
+      return { ...message, content: markdown, assets: assets.length ? assets : undefined };
+    });
+
     setBusy(true);
     const id = await saveExtracted(
       {
@@ -155,8 +179,9 @@ export function ImportView() {
         sourceUrl: "",
         messages,
         strategy: "manual:paste",
+        assets: all.length ? dedupeAssets(all) : undefined,
       },
-      { collectionId, tags: parsedTags() },
+      { collectionId, tags: parsedTags(), onMedia: setMedia },
     );
     setBusy(false);
     toast.success("Saved to your device");
@@ -388,6 +413,26 @@ export function ImportView() {
                   ? "Save to my device"
                   : `Save ${ready.length} chats to my device`}
             </Button>
+
+            {media && media.total ? (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[11.5px] text-ink-2">
+                  <span className="flex items-center gap-1.5">
+                    <ImageIcon size={12} strokeWidth={2.2} className="text-ink-3" />
+                    Copying media for offline
+                  </span>
+                  <span className="font-mono tabnums text-ink-3">
+                    {media.done}/{media.total} · {formatBytes(media.bytes)}
+                  </span>
+                </div>
+                <div className="h-1 overflow-hidden rounded-full bg-line">
+                  <div
+                    className="h-full rounded-full bg-accent transition-[width] duration-200"
+                    style={{ width: `${Math.round((media.done / media.total) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            ) : null}
           </Card>
         ) : null}
 
@@ -441,6 +486,7 @@ function ResultRow({
   const source = item.result?.source ?? item.error?.source ?? detectSource(item.url);
   const words = item.result?.messages.reduce((sum, m) => sum + countWords(m.content), 0) ?? 0;
   const preview = item.result?.messages.slice(0, 2) ?? [];
+  const mediaCount = item.result?.assets?.length ?? 0;
 
   return (
     <Card className="overflow-hidden">
@@ -460,6 +506,12 @@ function ResultRow({
               <span>{item.result.messages.length} turns</span>
               <span>{words.toLocaleString()} words</span>
               <span>{readingMinutes(words)} min read</span>
+              {mediaCount ? (
+                <span className="flex items-center gap-1 text-accent-ink">
+                  <ImageIcon size={11} strokeWidth={2.4} />
+                  {mediaCount} media
+                </span>
+              ) : null}
               {item.result.model ? <span className="font-mono">{item.result.model}</span> : null}
             </p>
           ) : null}
@@ -503,19 +555,21 @@ function ResultRow({
       </div>
 
       {expanded && preview.length ? (
-        <div className="max-h-72 space-y-3 overflow-y-auto border-t border-line bg-inset p-3">
-          <p className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-ink-3">
-            Preview
-          </p>
-          {preview.map((message) => (
-            <div key={message.id} className="space-y-1">
-              <p className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-ink-3">
-                {message.role === "user" ? "Question" : "Answer"}
-              </p>
-              <Markdown content={message.content.slice(0, 1200)} className="text-[13px]" />
-            </div>
-          ))}
-        </div>
+        <AssetProvider assets={item.result?.assets}>
+          <div className="max-h-80 space-y-3 overflow-y-auto border-t border-line bg-inset p-3">
+            <p className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-ink-3">
+              Preview
+            </p>
+            {preview.map((message) => (
+              <div key={message.id} className="space-y-1">
+                <p className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-ink-3">
+                  {message.role === "user" ? "Question" : "Answer"}
+                </p>
+                <Markdown content={message.content.slice(0, 1200)} className="text-[13px]" />
+              </div>
+            ))}
+          </div>
+        </AssetProvider>
       ) : null}
     </Card>
   );

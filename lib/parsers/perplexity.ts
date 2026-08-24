@@ -21,10 +21,25 @@ export async function parsePerplexity(url: string): Promise<ExtractResult> {
   }
 
   // Perplexity renders entirely on the client, so the REST thread is the only way in.
-  const api = await fetchPage(
-    `https://www.perplexity.ai/rest/thread/${encodeURIComponent(slug)}?with_parent_info=true&source=default`,
-    { accept: "application/json", referer: url },
-  );
+  let api: Awaited<ReturnType<typeof fetchPage>>;
+  try {
+    api = await fetchPage(
+      `https://www.perplexity.ai/rest/thread/${encodeURIComponent(slug)}?with_parent_info=true&source=default`,
+      { accept: "application/json", referer: url },
+    );
+  } catch (err) {
+    // Perplexity sits behind a bot check that rejects on the TLS handshake, so
+    // no user agent gets through. Say that plainly instead of implying a retry
+    // might help.
+    if (err instanceof ExtractProblem && err.code === "blocked") {
+      throw new ExtractProblem(
+        "blocked",
+        "Perplexity does not allow threads to be fetched by other software.",
+        "Open the thread, select the answer, copy it, then use “Paste text” here — formatting, tables and code are kept.",
+      );
+    }
+    throw err;
+  }
 
   if (api.status !== 200) {
     if (api.status === 400 || api.status === 404) {

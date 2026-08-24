@@ -1,10 +1,11 @@
 "use client";
 
-import { MessagesSquare, MoreHorizontal, Star, Timer } from "lucide-react";
+import { Image as ImageIcon, MessagesSquare, MoreHorizontal, Star, Timer } from "lucide-react";
 import Link from "next/link";
 import { COLLECTION_COLORS } from "@/lib/sources";
 import type { ChatMeta, Collection } from "@/lib/types";
 import { cn, relativeTime } from "@/lib/utils";
+import { AssetThumb } from "./Media";
 import { SourceMark } from "./SourceMark";
 import { Tag } from "./ui/primitives";
 
@@ -25,6 +26,8 @@ export function ChatCard({
   // Titles derived from the opening question repeat the excerpt verbatim.
   const key = (text: string) => text.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 60);
   const showExcerpt = Boolean(chat.excerpt) && key(chat.excerpt) !== key(chat.title);
+  // The site icon is stored like any other asset but is not "media" to a reader.
+  const mediaCount = (chat.assetIds ?? []).filter((id) => id !== chat.faviconAssetId).length;
 
   return (
     <div
@@ -42,7 +45,7 @@ export function ChatCard({
 
       {view === "list" ? (
         <>
-          <SourceMark source={chat.source} size="md" className="relative z-10" />
+          <SourceMark source={chat.source} faviconId={chat.faviconAssetId} size="md" className="relative z-10" />
           <div className="relative z-10 min-w-0 flex-1 pointer-events-none">
             <p className="truncate text-[13px] font-semibold leading-tight tracking-[-0.015em] text-ink">
               {chat.title}
@@ -56,8 +59,14 @@ export function ChatCard({
         </>
       ) : (
         <>
+          {chat.coverAssetId ? (
+            <span className="pointer-events-none relative z-10 mb-2.5 block aspect-[16/9] overflow-hidden rounded-[7px] bg-inset shadow-hairline">
+              <AssetThumb id={chat.coverAssetId} />
+            </span>
+          ) : null}
+
           <div className="pointer-events-none relative z-10 flex items-start gap-2.5">
-            <SourceMark source={chat.source} size="md" />
+            <SourceMark source={chat.source} faviconId={chat.faviconAssetId} size="md" />
             <p className="mt-0.5 line-clamp-2 flex-1 text-[13.5px] font-semibold leading-[1.35] tracking-[-0.015em] text-ink">
               {chat.title}
             </p>
@@ -83,6 +92,12 @@ export function ChatCard({
               <Tag key={tag}>#{tag}</Tag>
             ))}
             <span className="ml-auto flex items-center gap-2 font-mono text-[10px] tabnums text-ink-3">
+              {mediaCount ? (
+                <span className="flex items-center gap-1" title={`${mediaCount} media files stored`}>
+                  <ImageIcon size={10} strokeWidth={2.2} />
+                  {mediaCount}
+                </span>
+              ) : null}
               <span className="flex items-center gap-1">
                 <MessagesSquare size={10} strokeWidth={2.2} />
                 {chat.messageCount}

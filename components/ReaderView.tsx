@@ -8,6 +8,7 @@ import {
   Copy,
   ExternalLink,
   GraduationCap,
+  Image as ImageIcon,
   List,
   MoreHorizontal,
   Pin,
@@ -15,22 +16,24 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChatActions } from "@/components/ChatActions";
 import { Markdown } from "@/components/Markdown";
+import { AssetProvider } from "@/components/Media";
 import { SourceMark } from "@/components/SourceMark";
 import { Button, EmptyState, Segmented, Skeleton, Well } from "@/components/ui/primitives";
 import { Sheet } from "@/components/ui/sheet";
 import { useToast } from "@/components/ui/toast";
+import { storeLocalAsset } from "@/lib/assets";
 import { useLibrary } from "@/lib/store";
-import type { ChatMessage, ChatMeta } from "@/lib/types";
+import type { Asset, ChatMessage, ChatMeta } from "@/lib/types";
 import { cn, copyText, formatDate, stripMarkdown, truncate } from "@/lib/utils";
 
 export function ReaderView() {
   const params = useSearchParams();
   const router = useRouter();
   const id = params.get("id");
-  const { ready, chats, settings, setSetting, updateChat, loadBody } = useLibrary();
+  const { ready, chats, settings, setSetting, updateChat, loadBody, mediaJobs } = useLibrary();
   const toast = useToast();
 
   const chat = useMemo(() => chats.find((c) => c.id === id), [chats, id]);
@@ -138,6 +141,31 @@ export function ReaderView() {
     () => (messages ?? []).filter((m) => m.role === "user"),
     [messages],
   );
+  // One lookup table for the whole chat keeps the media components simple.
+  const assets = useMemo(() => (messages ?? []).flatMap((m) => m.assets ?? []), [messages]);
+  const mediaJob = chatId ? mediaJobs[chatId] : undefined;
+
+  /*
+   * Some pictures are simply not published — ChatGPT keeps generated images out
+   * of share links, for one. Letting the reader drop the file in themselves is
+   * the only way those end up offline, and because the markdown already points
+   * at the asset id, writing bytes there is all it takes.
+   */
+  const attachLocal = useCallback(
+    async (asset: Asset, file: File) => {
+      if (!chatId) return;
+      const stored = await storeLocalAsset(asset.id, file, settings.maxAssetMB);
+      const current = chats.find((c) => c.id === chatId);
+      await updateChat(chatId, {
+        assetIds: Array.from(new Set([...(current?.assetIds ?? []), stored.id])),
+        mediaBytes: (current?.mediaBytes ?? 0) + stored.bytes,
+        missingMedia: Math.max(0, (current?.missingMedia ?? 1) - 1) || undefined,
+        coverAssetId: current?.coverAssetId ?? (stored.mime.startsWith("image/") ? stored.id : undefined),
+      });
+      toast.success("Picture added", "It is stored on this device and works offline.");
+    },
+    [chatId, chats, settings.maxAssetMB, updateChat, toast],
+  );
   const ordinals = useMemo(() => {
     const map = new Map<string, number>();
     questions.forEach((question, index) => map.set(question.id, index + 1));
@@ -161,6 +189,11 @@ export function ReaderView() {
   }
 
   return (
+    <AssetProvider
+      assets={assets}
+      version={chat?.assetIds?.length ?? 0}
+      onAttach={attachLocal}
+    >
     <div className="min-h-dvh bg-page">
       <header className="sticky top-0 z-40 bg-page/85 backdrop-blur-xl">
         <div className="mx-auto flex h-12 max-w-3xl items-center gap-1 px-2 lg:px-4">
@@ -175,10 +208,19 @@ export function ReaderView() {
 
           {chat ? (
             <div className="flex min-w-0 flex-1 items-center gap-2">
-              <SourceMark source={chat.source} size="sm" />
+              <SourceMark source={chat.source} faviconId={chat.faviconAssetId} size="sm" />
               <p className="truncate text-[12.5px] font-semibold tracking-[-0.015em] text-ink">
                 {chat.title}
               </p>
+              {mediaJob ? (
+                <span
+                  className="flex shrink-0 items-center gap-1 rounded-full bg-accent-tint px-2 py-0.5 font-mono text-[10px] tabnums text-accent-ink"
+                  title="Copying pictures onto this device"
+                >
+                  <ImageIcon size={9} strokeWidth={2.4} />
+                  {mediaJob.done}/{mediaJob.total}
+                </span>
+              ) : null}
             </div>
           ) : (
             <Skeleton className="h-3 flex-1" />
@@ -399,6 +441,7 @@ export function ReaderView() {
         />
       ) : null}
     </div>
+    </AssetProvider>
   );
 }
 
@@ -412,7 +455,7 @@ function ReaderTitle({ chat, onFavorite }: { chat: ChatMeta; onFavorite: () => v
       </h1>
       <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11.5px] text-ink-2">
         <span className="flex items-center gap-1.5">
-          <SourceMark source={chat.source} size="sm" />
+          <SourceMark source={chat.source} faviconId={chat.faviconAssetId} size="sm" />
           {chat.model ?? undefined}
         </span>
         <Dot />

@@ -2,12 +2,14 @@
 
 import { Check, Copy, WrapText } from "lucide-react";
 import { memo, useMemo, useState, type ReactNode } from "react";
-import ReactMarkdown, { type Components } from "react-markdown";
+import ReactMarkdown, { type Components, defaultUrlTransform } from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
+import { MediaNode } from "@/components/Media";
 import { normaliseMath } from "@/lib/markdown";
+import { ASSET_SCHEME } from "@/lib/media";
 import { cn, copyText } from "@/lib/utils";
 
 /** Pulls the plain text back out of a highlighted node tree. */
@@ -80,8 +82,33 @@ function CodeBlock({ children }: { children?: ReactNode }) {
   );
 }
 
+/**
+ * react-markdown strips any scheme it does not recognise, which would wipe out
+ * every `losto-asset:` reference. Let those through and sanitise the rest as
+ * usual.
+ */
+function transformUrl(url: string): string {
+  return url.startsWith(ASSET_SCHEME) ? url : defaultUrlTransform(url);
+}
+
+/** True when a paragraph holds nothing but media, so the wrapper can be dropped. */
+function isMediaOnly(node: unknown): boolean {
+  const children = (node as { children?: { type?: string; tagName?: string; value?: string }[] })
+    ?.children;
+  if (!children?.length) return false;
+  return children.every(
+    (child) =>
+      child.tagName === "img" ||
+      (child.type === "text" && !child.value?.trim()),
+  );
+}
+
 const COMPONENTS: Components = {
   pre: ({ children }) => <CodeBlock>{children}</CodeBlock>,
+  img: ({ src, alt }) => <MediaNode src={typeof src === "string" ? src : undefined} alt={alt} />,
+  // Figures and video cannot live inside a <p>, so unwrap media-only paragraphs.
+  p: ({ node, children }) =>
+    isMediaOnly(node) ? <>{children}</> : <p>{children}</p>,
   a: ({ href, children }) => (
     <a href={href} target="_blank" rel="noreferrer noopener">
       {children}
@@ -140,6 +167,7 @@ export const Markdown = memo(function Markdown({
   return (
     <div className={cn("prose-losto", className)} data-typeface={typeface}>
       <ReactMarkdown
+        urlTransform={transformUrl}
         remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[
           [rehypeKatex, { throwOnError: false, strict: false, output: "htmlAndMathml" }],

@@ -1,4 +1,6 @@
 import TurndownService from "turndown";
+import { embedInfo, makeAsset } from "../media";
+import type { Asset } from "../types";
 
 /* -------------------------------------------------------------------------- */
 /* Embedded JSON discovery                                                    */
@@ -146,6 +148,82 @@ export function decodeEntities(text: string): string {
   });
 }
 
+/**
+ * Finds the site's own icon so a saved item can carry the publisher's mark.
+ *
+ * Only the site's own declared icon is used — never a third-party favicon
+ * service, which would hand someone else a log of everything a reader saves.
+ * The largest declared size wins, since these are stored once and scaled down.
+ */
+export function findFavicon(html: string, baseUrl: string): string | undefined {
+  let origin: string;
+  try {
+    origin = new URL(baseUrl).origin;
+  } catch {
+    return undefined;
+  }
+
+  const candidates: { href: string; score: number }[] = [];
+  const linkRe = /<link\b[^>]*>/gi;
+
+  for (let m = linkRe.exec(html); m; m = linkRe.exec(html)) {
+    const tag = m[0];
+    const rel = attrOf(tag, "rel")?.toLowerCase() ?? "";
+    if (!/\b(icon|shortcut icon|apple-touch-icon|apple-touch-icon-precomposed|mask-icon)\b/.test(rel)) {
+      continue;
+    }
+    const href = attrOf(tag, "href");
+    if (!href) continue;
+
+    // Prefer a big, square, raster icon: they render well at any tile size.
+    const sizes = attrOf(tag, "sizes") ?? "";
+    const largest = Math.max(
+      0,
+      ...(sizes.match(/\d+/g) ?? []).map((n) => Number.parseInt(n, 10)),
+    );
+    let score = largest || 16;
+    if (rel.includes("apple-touch-icon")) score += 200;
+    if (/\.svg(\?|#|$)/i.test(href)) score += 120;
+    if (rel.includes("mask-icon")) score -= 150;
+
+    candidates.push({ href, score });
+  }
+
+  const best = candidates.sort((a, b) => b.score - a.score)[0]?.href;
+  const resolved = best ? absoluteFrom(decodeEntities(best), baseUrl) : undefined;
+  // Every site answers /favicon.ico even when it declares nothing.
+  return resolved ?? `${origin}/favicon.ico`;
+}
+
+/** The page's icon as a downloadable asset, ready for the offline store. */
+export function siteIcon(html: string, baseUrl: string): Asset | undefined {
+  const href = findFavicon(html, baseUrl);
+  if (!href) return undefined;
+  let label = "";
+  try {
+    label = new URL(baseUrl).hostname.replace(/^www\./, "");
+  } catch {
+    /* label is cosmetic */
+  }
+  return makeAsset({ url: href, kind: "image", alt: label }) ?? undefined;
+}
+
+function attrOf(tag: string, name: string): string | undefined {
+  const match =
+    tag.match(new RegExp(`\\b${name}\\s*=\\s*"([^"]*)"`, "i")) ??
+    tag.match(new RegExp(`\\b${name}\\s*=\\s*'([^']*)'`, "i")) ??
+    tag.match(new RegExp(`\\b${name}\\s*=\\s*([^\\s>]+)`, "i"));
+  return match?.[1]?.trim();
+}
+
+function absoluteFrom(href: string, baseUrl: string): string | undefined {
+  try {
+    return new URL(href, baseUrl).href;
+  } catch {
+    return undefined;
+  }
+}
+
 export function pageTitle(html: string): string {
   const og = html.match(
     /<meta[^>]+(?:property|name)=["']og:title["'][^>]*content=["']([^"']+)["']/i,
@@ -175,19 +253,56 @@ function getTurndown(): TurndownService {
     emDelimiter: "*",
   });
 
-  td.remove(["script", "style", "noscript", "iframe", "form", "nav", "footer"]);
+  td.remove(["script", "style", "noscript", "form", "nav", "footer"]);
   td.addRule("dropSvg", { filter: (node) => node.nodeName === "SVG", replacement: () => "" });
 
-  // Keep fenced blocks language-tagged the way the source rendered them.
-  td.addRule("fencedCode", {
-    filter: (node) =>
-      node.nodeName === "PRE" && Boolean(node.firstChild && node.firstChild.nodeName === "CODE"),
+  // Clips and embedded players become image syntax; the media pass upgrades
+  // them to the right element once it knows what kind of file they are.
+  td.addRule("media", {
+    filter: (node) => ["VIDEO", "AUDIO"].includes(node.nodeName),
     replacement: (_content, node) => {
-      const code = (node as HTMLElement).firstChild as HTMLElement;
-      const className = code.getAttribute?.("class") ?? "";
-      const lang = className.match(/language-([\w+-]+)/)?.[1] ?? "";
-      const text = code.textContent ?? "";
-      return `\n\n\`\`\`${lang}\n${text.replace(/\n$/, "")}\n\`\`\`\n\n`;
+      const el = node as HTMLElement;
+      const src =
+        el.getAttribute?.("src") ||
+        (el.querySelector?.("source") as HTMLElement | null)?.getAttribute?.("src") ||
+        "";
+      if (!src) return "";
+      const label = el.getAttribute?.("title") || el.getAttribute?.("aria-label") || "";
+      return `\n\n![${label}](${src})\n\n`;
+    },
+  });
+
+  td.addRule("embeds", {
+    filter: (node) => node.nodeName === "IFRAME",
+    replacement: (_content, node) => {
+      const el = node as HTMLElement;
+      const raw = el.getAttribute?.("src") || el.getAttribute?.("data-src") || "";
+      const src = raw.startsWith("//") ? `https:${raw}` : raw;
+      // Only players are worth keeping — every other iframe is furniture.
+      const embed = src ? embedInfo(src) : null;
+      if (!embed) return "";
+      const label = el.getAttribute?.("title") || "";
+      return `\n\n![${label}](${embed.watchUrl})\n\n`;
+    },
+  });
+
+  /*
+   * Keep fenced blocks language-tagged the way the source rendered them.
+   *
+   * Every <pre> counts, not just `<pre><code>`: Medium and several CMSs style
+   * code with spans and no <code> element at all, and requiring one silently
+   * flattened their snippets into paragraphs.
+   */
+  td.addRule("fencedCode", {
+    filter: (node) => node.nodeName === "PRE",
+    replacement: (_content, node) => {
+      const pre = node as HTMLElement;
+      const code = pre.querySelector?.("code") ?? null;
+      const holder = (code ?? pre) as HTMLElement;
+      const text = codeTextOf(holder);
+      if (!text.trim()) return "";
+      const lang = languageOf(code) || languageOf(pre) || "";
+      return `\n\n\`\`\`${lang}\n${text.replace(/\n+$/, "")}\n\`\`\`\n\n`;
     },
   });
 
@@ -198,6 +313,29 @@ function getTurndown(): TurndownService {
 
   turndown = td;
   return td;
+}
+
+/**
+ * Text of a code block with its line breaks intact. `textContent` alone drops
+ * `<br>`, which is how several editors store newlines inside a snippet.
+ */
+function codeTextOf(node: HTMLElement): string {
+  const html = node.innerHTML ?? "";
+  if (!/<br/i.test(html)) return node.textContent ?? "";
+  return decodeEntities(
+    html
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/(div|p)>/gi, "\n")
+      .replace(/<[^>]+>/g, ""),
+  );
+}
+
+/** Reads a language hint out of the usual highlighter class conventions. */
+function languageOf(node: Element | null): string {
+  const className = node?.getAttribute?.("class") ?? "";
+  const match = className.match(/(?:language|lang|highlight-source|brush)[-:]([\w+#]+)/i);
+  const lang = match?.[1]?.toLowerCase();
+  return lang && lang !== "none" && lang !== "plain" ? lang : "";
 }
 
 function markdownTable(table: HTMLElement): string {

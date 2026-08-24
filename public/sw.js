@@ -18,6 +18,7 @@ const SHELL = [
   "/collections",
   "/search",
   "/settings",
+  "/legal",
   "/offline",
   "/manifest.webmanifest",
   "/icons/icon-192.png",

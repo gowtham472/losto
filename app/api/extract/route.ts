@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { ExtractProblem, extractChat } from "@/lib/parsers";
+import { EXTRACT_LIMIT, callerKey, consume, tooManyRequests } from "@/lib/ratelimit";
 import { detectSource } from "@/lib/sources";
 import type { ExtractError } from "@/lib/types";
 
@@ -12,12 +13,18 @@ export const maxDuration = 30;
  * browser because of CORS, so the extraction happens here. Nothing is stored.
  */
 export async function GET(request: NextRequest) {
+  const limit = consume(callerKey(request), EXTRACT_LIMIT);
+  if (!limit.ok) return tooManyRequests(limit);
+
   const url = request.nextUrl.searchParams.get("url");
   if (!url) return fail("bad_url", "No link was provided.", "unknown");
   return handle(url);
 }
 
 export async function POST(request: NextRequest) {
+  const limit = consume(callerKey(request), EXTRACT_LIMIT);
+  if (!limit.ok) return tooManyRequests(limit);
+
   let url: unknown;
   try {
     ({ url } = (await request.json()) as { url?: unknown });

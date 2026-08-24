@@ -147,7 +147,7 @@ export function LibraryView() {
         ) : null}
 
         {/* filters */}
-        <div className="sticky top-[68px] z-20 -mx-4 mb-4 bg-page/90 px-4 pb-2 pt-1 backdrop-blur-xl lg:top-[92px] lg:-mx-8 lg:px-8">
+        <div className="sticky top-[68px] z-20 -mx-4 mb-5 bg-page/90 px-4 pb-3 pt-2 backdrop-blur-xl lg:top-[92px] lg:-mx-8 lg:px-8">
           <div className="relative mb-2">
             <Search
               size={14}
@@ -173,7 +173,7 @@ export function LibraryView() {
             ) : null}
           </div>
 
-          <div className="no-scrollbar -mx-4 flex items-center gap-1.5 overflow-x-auto px-4 lg:-mx-8 lg:px-8">
+          <div className="no-scrollbar -mx-4 flex items-center gap-1.5 overflow-x-auto px-4 py-1 lg:-mx-8 lg:px-8">
             <Chip active={!hasFilters} onClick={() => router.replace(pathname, { scroll: false })}>
               All
             </Chip>
@@ -241,10 +241,10 @@ export function LibraryView() {
                 <Link
                   key={chat.id}
                   href={`/chat?id=${chat.id}`}
-                  className="group flex w-[210px] shrink-0 flex-col gap-2 rounded-card bg-surface p-2.5 shadow-card transition-colors hover:bg-hover"
+                  className="group flex w-[232px] shrink-0 flex-col gap-2.5 rounded-card bg-surface p-3 shadow-card transition-colors hover:bg-hover"
                 >
                   <div className="flex items-center gap-2">
-                    <SourceMark source={chat.source} size="sm" />
+                    <SourceMark source={chat.source} faviconId={chat.faviconAssetId} size="sm" />
                     <span className="font-mono text-[10px] tabnums text-ink-3">
                       {Math.round(chat.progress * 100)}%
                     </span>
@@ -252,7 +252,7 @@ export function LibraryView() {
                       {relativeTime(chat.lastOpenedAt)}
                     </span>
                   </div>
-                  <p className="line-clamp-2 text-[12.5px] font-semibold leading-tight tracking-[-0.015em] text-ink">
+                  <p className="line-clamp-2 min-h-[2.4em] text-[12.5px] font-semibold leading-[1.35] tracking-[-0.015em] text-ink">
                     {chat.title}
                   </p>
                   <span className="mt-auto block h-[3px] overflow-hidden rounded-full bg-line">

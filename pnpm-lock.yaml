@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@mixmark-io/domino':
+        specifier: ^2.2.0
+        version: 2.2.0
       clsx:
         specifier: ^2.1.1
         version: 2.1.1

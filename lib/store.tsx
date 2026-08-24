@@ -10,8 +10,11 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { type DownloadOutcome, type DownloadProgress, downloadAssets } from "./assets";
 import * as db from "./db";
+import { originIconAsset } from "./media";
 import type {
+  Asset,
   BackupFile,
   ChatBody,
   ChatMessage,
@@ -33,6 +36,8 @@ export const DEFAULT_SETTINGS: Settings = {
   density: "comfortable",
   sort: "recent",
   view: "grid",
+  media: "all",
+  maxAssetMB: 25,
 };
 
 export function loadSettings(): Settings {
@@ -64,6 +69,8 @@ interface SaveOptions {
   tags?: string[];
   title?: string;
   note?: string;
+  /** Called while the pictures and clips are copied onto the device. */
+  onMedia?: (progress: DownloadProgress) => void;
 }
 
 interface LibraryValue {
@@ -72,11 +79,17 @@ interface LibraryValue {
   chats: ChatMeta[];
   collections: Collection[];
   settings: Settings;
+  /** Media downloads still running, keyed by chat id. */
+  mediaJobs: Record<string, DownloadProgress>;
   setSetting: <K extends keyof Settings>(key: K, value: Settings[K]) => void;
   saveExtracted: (result: ExtractResult, options?: SaveOptions) => Promise<string>;
   updateChat: (id: string, patch: Partial<ChatMeta>) => Promise<void>;
   updateMessages: (id: string, messages: ChatMessage[]) => Promise<void>;
   removeChats: (ids: string[]) => Promise<void>;
+  refetchMedia: (
+    id: string,
+    onProgress?: (progress: DownloadProgress) => void,
+  ) => Promise<DownloadOutcome>;
   loadBody: (id: string) => Promise<ChatMessage[]>;
   allBodies: () => Promise<ChatBody[]>;
   addCollection: (input: { name: string; color: string; emoji: string }) => Promise<Collection>;
@@ -95,6 +108,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
   const [chats, setChats] = useState<ChatMeta[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [mediaJobs, setMediaJobs] = useState<Record<string, DownloadProgress>>({});
   const bodyCache = useRef(new Map<string, ChatMessage[]>());
 
   useEffect(() => {
@@ -152,39 +166,144 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const saveExtracted = useCallback<LibraryValue["saveExtracted"]>(async (result, options = {}) => {
-    const id = uid("c");
-    const now = Date.now();
-    const messages = result.messages;
-    const words = messages.reduce((sum, m) => sum + countWords(m.content), 0);
+  const settingsRef = useRef(settings);
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
 
-    const meta: ChatMeta = {
-      id,
-      title: (options.title ?? result.title).trim() || "Untitled chat",
-      source: result.source,
-      sourceUrl: result.sourceUrl,
-      model: result.model,
-      collectionId: options.collectionId ?? null,
-      tags: options.tags ?? [],
-      savedAt: now,
-      originalAt: result.originalAt,
-      updatedAt: now,
-      messageCount: messages.length,
-      wordCount: words,
-      readMinutes: readingMinutes(words),
-      favorite: false,
-      archived: false,
-      progress: 0,
-      excerpt: buildExcerpt(messages),
-      note: options.note,
-      pinned: [],
+  /**
+   * Folds a finished media download into the stored chat record.
+   */
+  const applyMedia = useCallback(
+    async (id: string, assets: Asset[], media: DownloadOutcome, faviconId?: string) => {
+    const meta = await db.getChat(id);
+    if (!meta) return;
+    const merged = Array.from(new Set([...(meta.assetIds ?? []), ...media.stored]));
+    const updated: ChatMeta = {
+      ...meta,
+      assetIds: merged.length ? merged : undefined,
+      coverAssetId:
+        meta.coverAssetId ??
+        assets.find(
+          (a) => a.kind === "image" && a.id !== faviconId && media.stored.includes(a.id),
+        )?.id,
+      faviconAssetId:
+        meta.faviconAssetId ??
+        (faviconId && media.stored.includes(faviconId) ? faviconId : undefined),
+      mediaBytes: (meta.mediaBytes ?? 0) + media.bytes || undefined,
+      missingMedia: media.skipped.filter((s) => s.reason !== "policy").length || undefined,
+      updatedAt: Date.now(),
     };
+    await db.putChat(updated);
+    setChats((prev) => prev.map((c) => (c.id === id ? updated : c)));
+    },
+    [],
+  );
 
-    await db.putChat(meta, { id, messages });
-    bodyCache.current.set(id, messages);
-    setChats((prev) => [meta, ...prev]);
-    return id;
-  }, []);
+  const saveExtracted = useCallback<LibraryValue["saveExtracted"]>(
+    async (result, options = {}) => {
+      const id = uid("c");
+      const now = Date.now();
+      const messages = result.messages;
+      const words = messages.reduce((sum, m) => sum + countWords(m.content), 0);
+      const assets = result.assets ?? [];
+
+      const meta: ChatMeta = {
+        id,
+        title: (options.title ?? result.title).trim() || "Untitled chat",
+        source: result.source,
+        sourceUrl: result.sourceUrl,
+        model: result.model,
+        collectionId: options.collectionId ?? null,
+        tags: options.tags ?? [],
+        savedAt: now,
+        originalAt: result.originalAt,
+        updatedAt: now,
+        messageCount: messages.length,
+        wordCount: words,
+        readMinutes: readingMinutes(words),
+        favorite: false,
+        archived: false,
+        progress: 0,
+        excerpt: buildExcerpt(messages),
+        note: options.note,
+        pinned: [],
+      };
+
+      // The words are what matter, so the chat is saved and readable straight
+      // away; the pictures stream in behind it and patch the record as they
+      // land. A chat with fifty images no longer holds the import hostage.
+      await db.putChat(meta, { id, messages });
+      bodyCache.current.set(id, messages);
+      setChats((prev) => [meta, ...prev]);
+
+      if (assets.length) {
+        setMediaJobs((prev) => ({
+          ...prev,
+          [id]: { done: 0, total: assets.length, bytes: 0 },
+        }));
+
+        void downloadAssets(
+          assets,
+          {
+            media: settingsRef.current.media,
+            maxAssetMB: settingsRef.current.maxAssetMB,
+          },
+          (progress) => {
+            setMediaJobs((prev) => ({ ...prev, [id]: progress }));
+            options.onMedia?.(progress);
+          },
+        )
+          .then((media) => applyMedia(id, assets, media, result.favicon?.id))
+          .catch(() => {})
+          .finally(() => {
+            setMediaJobs((prev) => {
+              const next = { ...prev };
+              delete next[id];
+              return next;
+            });
+          });
+      }
+
+      return id;
+    },
+    [applyMedia],
+  );
+
+  /** Retries media for a chat whose pictures never made it onto the device. */
+  const refetchMedia = useCallback<LibraryValue["refetchMedia"]>(
+    async (id, onProgress) => {
+      const messages = bodyCache.current.get(id) ?? (await db.getBody(id))?.messages ?? [];
+      const existing = await db.getChat(id);
+
+      // The site icon is not attached to any message, so rebuild it here —
+      // this is what repairs items saved before icons existed.
+      const icon = existing?.faviconAssetId ? null : originIconAsset(existing?.sourceUrl);
+      const assets = [...messages.flatMap((m) => m.assets ?? []), ...(icon ? [icon] : [])];
+      if (!assets.length) return { stored: [], skipped: [], bytes: 0 };
+
+      setMediaJobs((prev) => ({ ...prev, [id]: { done: 0, total: assets.length, bytes: 0 } }));
+      try {
+        const outcome = await downloadAssets(
+          assets,
+          { media: settingsRef.current.media, maxAssetMB: settingsRef.current.maxAssetMB },
+          (progress) => {
+            setMediaJobs((prev) => ({ ...prev, [id]: progress }));
+            onProgress?.(progress);
+          },
+        );
+        await applyMedia(id, assets, outcome, icon?.id);
+        return outcome;
+      } finally {
+        setMediaJobs((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+      }
+    },
+    [applyMedia],
+  );
 
   const updateChat = useCallback<LibraryValue["updateChat"]>(async (id, patch) => {
     let next: ChatMeta | undefined;
@@ -223,6 +342,8 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     await db.deleteChats(ids);
     for (const id of ids) bodyCache.current.delete(id);
     setChats((prev) => prev.filter((c) => !ids.includes(c.id)));
+    // Blobs no surviving chat points at would otherwise sit there forever.
+    await db.pruneAssets().catch(() => 0);
   }, []);
 
   const loadBody = useCallback<LibraryValue["loadBody"]>(async (id) => {
@@ -312,6 +433,63 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     return { chats: metas.length, collections: newCollections.length };
   }, []);
 
+  /*
+   * Items saved before icons existed, or whose icon download failed, show a
+   * monogram forever otherwise. One quiet pass fills them in: a single request
+   * per site, not per chat, and only when there is a connection to spare.
+   */
+  const backfilled = useRef(false);
+  useEffect(() => {
+    if (!ready || backfilled.current) return;
+    if (settingsRef.current.media === "none") return;
+    if (typeof navigator !== "undefined" && !navigator.onLine) return;
+
+    const pending = chats.filter((c) => !c.faviconAssetId && c.sourceUrl);
+    if (!pending.length) return;
+    backfilled.current = true;
+
+    void (async () => {
+      const byIcon = new Map<string, { asset: Asset; chatIds: string[] }>();
+      for (const chat of pending) {
+        const asset = originIconAsset(chat.sourceUrl);
+        if (!asset) continue;
+        const entry = byIcon.get(asset.id) ?? { asset, chatIds: [] };
+        entry.chatIds.push(chat.id);
+        byIcon.set(asset.id, entry);
+      }
+
+      const groups = [...byIcon.values()].slice(0, 20);
+      if (!groups.length) return;
+
+      const outcome = await downloadAssets(
+        groups.map((g) => g.asset),
+        { media: "images", maxAssetMB: 2 },
+      ).catch(() => null);
+      if (!outcome?.stored.length) return;
+
+      const updates: ChatMeta[] = [];
+      for (const group of groups) {
+        if (!outcome.stored.includes(group.asset.id)) continue;
+        for (const chatId of group.chatIds) {
+          const meta = await db.getChat(chatId);
+          if (!meta || meta.faviconAssetId) continue;
+          const next: ChatMeta = {
+            ...meta,
+            faviconAssetId: group.asset.id,
+            assetIds: Array.from(new Set([...(meta.assetIds ?? []), group.asset.id])),
+          };
+          await db.putChat(next);
+          updates.push(next);
+        }
+      }
+
+      if (updates.length) {
+        const byId = new Map(updates.map((u) => [u.id, u]));
+        setChats((prev) => prev.map((c) => byId.get(c.id) ?? c));
+      }
+    })();
+  }, [ready, chats]);
+
   const wipe = useCallback(async () => {
     await db.clearAll();
     bodyCache.current.clear();
@@ -326,11 +504,13 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
       chats,
       collections,
       settings,
+      mediaJobs,
       setSetting,
       saveExtracted,
       updateChat,
       updateMessages,
       removeChats,
+      refetchMedia,
       loadBody,
       allBodies,
       addCollection,
@@ -346,11 +526,13 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
       chats,
       collections,
       settings,
+      mediaJobs,
       setSetting,
       saveExtracted,
       updateChat,
       updateMessages,
       removeChats,
+      refetchMedia,
       loadBody,
       allBodies,
       addCollection,

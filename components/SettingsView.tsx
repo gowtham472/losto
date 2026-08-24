@@ -3,7 +3,10 @@
 import {
   Download,
   HardDrive,
+  Minus,
   Moon,
+  Plus,
+  Scale,
   Share,
   Smartphone,
   Sun,
@@ -11,6 +14,7 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { PageHeader } from "@/components/AppShell";
 import { Button, Card, Label, SectionTitle, Segmented, Well } from "@/components/ui/primitives";
@@ -79,6 +83,13 @@ export function SettingsView() {
       );
     }
   };
+
+  // Site icons are stored alongside media but are not what a reader means by it.
+  const mediaFiles = chats.reduce(
+    (sum, c) => sum + (c.assetIds ?? []).filter((id) => id !== c.faviconAssetId).length,
+    0,
+  );
+  const mediaBytes = chats.reduce((sum, c) => sum + (c.mediaBytes ?? 0), 0);
 
   const usedPercent =
     storage && storage.quota ? Math.min(100, (storage.usage / storage.quota) * 100) : 0;
@@ -172,9 +183,58 @@ export function SettingsView() {
           </Card>
         </section>
 
+        {/* media */}
+        <section>
+          <SectionTitle index="03">Pictures and video</SectionTitle>
+          <Card className="divide-y divide-line">
+            <Row
+              label="Copy media for offline"
+              hint="Media links from the assistants expire within hours, so the files are copied onto this device as each chat is saved."
+            >
+              <Segmented
+                value={settings.media}
+                onChange={(v) => setSetting("media", v)}
+                options={[
+                  { value: "all", label: "All" },
+                  { value: "images", label: "Images" },
+                  { value: "none", label: "Off" },
+                ]}
+              />
+            </Row>
+            <Row
+              label="Skip files bigger than"
+              hint="Keeps one long clip from filling the phone."
+            >
+              <div className="flex items-center gap-1.5">
+                <Button
+                  size="icon-sm"
+                  aria-label="Lower the size limit"
+                  onClick={() =>
+                    setSetting("maxAssetMB", Math.max(1, settings.maxAssetMB - 5))
+                  }
+                >
+                  <Minus size={13} strokeWidth={2.4} />
+                </Button>
+                <span className="w-14 text-center font-mono text-[11.5px] tabnums text-ink-2">
+                  {settings.maxAssetMB} MB
+                </span>
+                <Button
+                  size="icon-sm"
+                  aria-label="Raise the size limit"
+                  onClick={() =>
+                    setSetting("maxAssetMB", Math.min(200, settings.maxAssetMB + 5))
+                  }
+                >
+                  <Plus size={13} strokeWidth={2.4} />
+                </Button>
+              </div>
+            </Row>
+          </Card>
+        </section>
+
         {/* install */}
         <section>
-          <SectionTitle index="03">Install on your phone</SectionTitle>
+          <SectionTitle index="04">Install on your phone</SectionTitle>
           <Card className="p-3">
             {installed ? (
               <p className="text-[12.5px] leading-relaxed text-ink-2">
@@ -225,7 +285,7 @@ export function SettingsView() {
 
         {/* storage */}
         <section>
-          <SectionTitle index="04">Storage</SectionTitle>
+          <SectionTitle index="05">Storage</SectionTitle>
           <Card className="divide-y divide-line">
             <div className="p-3">
               <div className="flex items-baseline justify-between">
@@ -245,7 +305,8 @@ export function SettingsView() {
               </div>
               <p className="mt-2 font-mono text-[10.5px] tabnums text-ink-3">
                 {chats.length} chats · {collections.length} subjects ·{" "}
-                {chats.reduce((sum, c) => sum + c.wordCount, 0).toLocaleString()} words
+                {chats.reduce((sum, c) => sum + c.wordCount, 0).toLocaleString()} words ·{" "}
+                {mediaFiles} media ({formatBytes(mediaBytes)})
               </p>
             </div>
 
@@ -278,11 +339,11 @@ export function SettingsView() {
 
         {/* backup */}
         <section>
-          <SectionTitle index="05">Backup and transfer</SectionTitle>
+          <SectionTitle index="06">Backup and transfer</SectionTitle>
           <Card className="divide-y divide-line">
             <Row
               label="Export everything"
-              hint="One JSON file with every chat, subject and tag."
+              hint="One JSON file with every chat, subject and tag. Pictures and clips stay on this device — after restoring, use Re-download media on a chat to fetch them again."
             >
               <Button onClick={doExport} disabled={!chats.length}>
                 <Download size={13} strokeWidth={2.2} />
@@ -313,7 +374,7 @@ export function SettingsView() {
 
         {/* danger */}
         <section>
-          <SectionTitle index="06">Danger zone</SectionTitle>
+          <SectionTitle index="07">Danger zone</SectionTitle>
           <Card className="p-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -334,13 +395,24 @@ export function SettingsView() {
           </Card>
         </section>
 
-        <Well className="p-3">
+        <Well className="space-y-2 p-3">
           <p className="text-[11.5px] leading-relaxed text-ink-2">
             <strong className="font-semibold text-ink">Losto keeps nothing on a server.</strong>{" "}
             Chats live in this browser&apos;s storage. The only network request Losto makes is
-            fetching a share link you paste, and that response goes straight to your device without
-            being stored anywhere else.
+            fetching a link you paste, and that response goes straight to your device without being
+            stored anywhere else.
           </p>
+          <p className="text-[11.5px] leading-relaxed text-ink-2">
+            Saved articles keep their author and original link attached, and Losto respects
+            robots.txt — it will not fetch a page whose site asks automated tools to stay away.
+          </p>
+          <Link
+            href="/legal"
+            className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-accent-ink hover:underline"
+          >
+            <Scale size={12} strokeWidth={2.2} />
+            Privacy, terms and open-source notices
+          </Link>
         </Well>
       </div>
 

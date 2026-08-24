@@ -83,7 +83,7 @@ export function StudyHubView() {
                     href={`/study/session?id=${chat.id}`}
                     className="flex items-center gap-3 rounded-card bg-surface p-2.5 shadow-card transition-colors hover:bg-hover"
                   >
-                    <SourceMark source={chat.source} size="md" />
+                    <SourceMark source={chat.source} faviconId={chat.faviconAssetId} size="md" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[13px] font-semibold tracking-[-0.015em] text-ink">
                         {chat.title}

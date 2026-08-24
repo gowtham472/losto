@@ -1,6 +1,14 @@
 "use client";
 
-import { Check, Download, ExternalLink, Link2, Trash2 } from "lucide-react";
+import {
+  Check,
+  Download,
+  ExternalLink,
+  Image as ImageIcon,
+  Link2,
+  Loader2,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import { toMarkdownDocument } from "@/lib/markdown";
 import { COLLECTION_COLORS, sourceInfo } from "@/lib/sources";
@@ -34,11 +42,12 @@ function ChatActionsSheet({
   onClose: () => void;
   onDeleted?: (id: string) => void;
 }) {
-  const { collections, updateChat, removeChats, loadBody } = useLibrary();
+  const { collections, updateChat, removeChats, loadBody, refetchMedia } = useLibrary();
   const toast = useToast();
   const [title, setTitle] = useState(chat.title);
   const [tags, setTags] = useState(chat.tags.join(", "));
   const [confirming, setConfirming] = useState(false);
+  const [refetching, setRefetching] = useState(false);
 
   const commit = async () => {
     const nextTags = tags
@@ -123,6 +132,45 @@ function ChatActionsSheet({
           </div>
 
           <div className="space-y-1 border-t border-line pt-3">
+            <Row
+              icon={
+                refetching ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <ImageIcon size={14} strokeWidth={2.1} />
+                )
+              }
+              label={
+                refetching
+                  ? "Downloading media…"
+                  : chat.missingMedia
+                    ? `Re-download media (${chat.missingMedia} missing)`
+                    : "Re-download media"
+              }
+              disabled={refetching}
+              onClick={async () => {
+                setRefetching(true);
+                try {
+                  const outcome = await refetchMedia(chat.id);
+                  const failed = outcome.skipped.length;
+                  if (outcome.stored.length) {
+                    toast.success(
+                      `${outcome.stored.length} media ${outcome.stored.length === 1 ? "file" : "files"} stored`,
+                      failed ? `${failed} could not be fetched.` : undefined,
+                    );
+                  } else {
+                    toast.error(
+                      "Nothing new to download",
+                      failed
+                        ? "The source will not serve these files publicly."
+                        : "This chat has no media.",
+                    );
+                  }
+                } finally {
+                  setRefetching(false);
+                }
+              }}
+            />
             <Row
               icon={<Download size={14} strokeWidth={2.1} />}
               label="Export as Markdown"
