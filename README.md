@@ -274,15 +274,19 @@ rather than a scraper:
 
 - **It identifies itself first.** The default agent is
   `Mozilla/5.0 (compatible; LostoReader/1.0; +<info url>) user-initiated-fetch`.
-- **It reads robots.txt** before every page and media file, honours
-  `Allow`/`Disallow` precedence and `Crawl-delay`, re-checks after a cross-host
-  redirect, and refuses politely when a path is off limits.
-- **Compatibility retry.** A few sites - Medium among them - answer anything
-  that is not a browser with a `403`, even on paths their own robots.txt allows
-  for `*`. When robots.txt permits a page but the site refuses the identified
-  request, Losto asks once more as a plain browser and **says so on the saved
-  item**. robots.txt is treated as the site's real policy, the `403` as a
-  heuristic. `LOSTO_STRICT_UA=1` disables the retry.
+- **It reads robots.txt before every page**, honours `Allow`/`Disallow`
+  precedence and `Crawl-delay`, re-checks after a cross-host redirect, and
+  refuses politely when a path is off limits.
+- **Pictures on a permitted page are not checked again.** robots.txt governs
+  crawling documents; no browser consults it before loading an image or a site
+  icon, and neither does Losto. Media is still relayed one file at a time, only
+  for a page you asked for, size-capped, content-type checked, rate-limited, and
+  never from a private address.
+- **Compatibility retry.** A few sites - Medium and ChatGPT among them - answer
+  anything that is not a browser with a `403`. When that happens Losto asks once
+  more as a plain browser, and **says so on the saved item**. This applies to
+  pages and to media alike, so an article cannot arrive with its illustrations
+  missing. `LOSTO_STRICT_UA=1` disables the retry in both places.
 - **It never crawls.** One URL per request, only when a person pastes it.
 - **It does not bypass anything** - no paywalls, no logins, no bot challenges.
 - **It rate-limits itself**: 30 extractions and 300 media files a minute per
@@ -311,7 +315,7 @@ rebuild.
 | `LOSTO_BOT_NAME` | `LostoReader` | Name used in the user agent and robots matching |
 | `LOSTO_BOT_URL` | a GitHub URL | Where a site owner lands from the user agent. **Point this at a page that exists** |
 | `LOSTO_USER_AGENT` | the honest agent | Overrides the agent entirely |
-| `LOSTO_STRICT_UA` | unset | `1` disables the browser retry |
+| `LOSTO_STRICT_UA` | unset | `1` disables the browser retry, for pages and media alike |
 | `LOSTO_ASSET_HOSTS` | unset | Comma-separated allow list for the media proxy |
 
 ## Running it

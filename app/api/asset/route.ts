@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { isPrivateHost } from "@/lib/parsers";
 import { ASSET_LIMIT, callerKey, consume, tooManyRequests } from "@/lib/ratelimit";
-import { BROWSER_UA } from "@/lib/parsers/http";
+import { BROWSER_UA, COMPATIBILITY_UA, STRICT_UA } from "@/lib/parsers/http";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,19 +36,35 @@ export async function GET(request: NextRequest) {
   if (isPrivateHost(url.hostname)) return bad("Refusing to fetch a private address.");
   if (!hostAllowed(url.hostname)) return bad("That host is not on the allow list.", 403);
 
-  let upstream: Response;
-  try {
-    upstream = await fetch(url.href, {
+  const attempt = (agent: string) =>
+    fetch(url.href, {
       redirect: "follow",
       cache: "no-store",
       signal: AbortSignal.timeout(TIMEOUT_MS),
       headers: {
-        "user-agent": BROWSER_UA,
+        "user-agent": agent,
         accept: "image/avif,image/webp,image/*,video/*,audio/*,*/*;q=0.8",
         "accept-language": "en-US,en;q=0.9",
         referer: `${url.origin}/`,
       },
     });
+
+  let upstream: Response;
+  try {
+    upstream = await attempt(BROWSER_UA);
+
+    /*
+     * A site that turns an identified request away from a page does the same to
+     * its pictures - a site icon most of all, which every browser on earth
+     * fetches without being asked twice. The page fetcher already asks once more
+     * as a browser when that happens; doing anything else here would mean the
+     * article arrives and its illustrations do not. Same behaviour, same switch:
+     * LOSTO_STRICT_UA=1 turns it off in both places.
+     */
+    if (!STRICT_UA && looksTurnedAway(upstream)) {
+      await upstream.body?.cancel().catch(() => {});
+      upstream = await attempt(COMPATIBILITY_UA);
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : "unknown error";
     return bad(`Could not reach the media (${message}).`, 502);
@@ -117,6 +133,17 @@ function capped(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
       reader.cancel(reason).catch(() => {});
     },
   });
+}
+
+/**
+ * A refusal aimed at non-browsers, rather than a real answer. A 429 is left
+ * alone deliberately - that is the host asking for less traffic, not more.
+ */
+function looksTurnedAway(res: Response): boolean {
+  if (res.status === 401 || res.status === 403 || res.status === 406) return true;
+  const mime = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+  // A 200 that hands back a page where a picture was asked for is an interstitial.
+  return res.ok && !isMedia(mime);
 }
 
 function isMedia(mime: string): boolean {

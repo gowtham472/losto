@@ -71,8 +71,10 @@ export default function LegalPage() {
               </li>
               <li>
                 <strong className="font-semibold text-ink">robots.txt is read first</strong>, before
-                every page and every picture. If a site asks automated tools to leave a path alone,
-                Losto refuses it and tells you so.
+                every page. If a site asks automated tools to leave a path alone, Losto refuses it
+                and tells you so. The pictures on a page it has already allowed are then loaded the
+                way your browser loads them, which is also the way the site&apos;s own icon is
+                fetched to show you where something came from.
               </li>
               <li>
                 <strong className="font-semibold text-ink">It says who it is.</strong> The request

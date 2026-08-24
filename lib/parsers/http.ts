@@ -17,10 +17,10 @@ export const BROWSER_UA = process.env.LOSTO_USER_AGENT ?? BOT_UA;
  *
  * Set LOSTO_STRICT_UA=1 to turn the retry off and always stay identified.
  */
-const COMPATIBILITY_UA =
+export const COMPATIBILITY_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36";
 
-const STRICT_UA = process.env.LOSTO_STRICT_UA === "1";
+export const STRICT_UA = process.env.LOSTO_STRICT_UA === "1";
 
 const TIMEOUT_MS = 20_000;
 const MAX_BYTES = 8 * 1024 * 1024;

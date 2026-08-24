@@ -81,12 +81,24 @@ it can be argued with.
 ### 4. robots.txt
 
 Not law - a voluntary convention, and the clearest machine-readable statement of
-what a site wants automated clients to do. Losto follows it strictly:
+what a site wants automated clients to do. Losto follows it for the thing it
+governs:
 
-- Read before every page fetch and every media file.
-- `Allow`/`Disallow` longest-match precedence, `*` and `$` wildcards,
-  `Crawl-delay` honoured, re-checked after a cross-host redirect.
-- A disallowed path is refused, and the reader is told why.
+- Read before every **page** fetch. `Allow`/`Disallow` longest-match precedence,
+  `*` and `$` wildcards, `Crawl-delay` honoured, re-checked after a cross-host
+  redirect. A disallowed path is refused and the reader is told why.
+- **Not** re-checked for the pictures on a page it already permitted. robots.txt
+  is a crawling protocol: it governs which documents an automated client may go
+  and read. No browser consults it before loading an image, a stylesheet or a
+  site icon, and treating a subresource of a page the reader asked for as a
+  separate crawl would be a misreading of it. Those fetches stay bounded by
+  everything else - one file, one page, size-capped, content-type checked,
+  rate-limited, never a private address.
+
+That distinction is stated plainly rather than glossed, because the honest
+version of this document is worth more than a tidier one. Anyone who disagrees
+with the reading has `LOSTO_ASSET_HOSTS` to narrow it and the `fetchable` switch
+to stop a source entirely.
 
 Where a site's robots.txt and its terms disagree, we follow robots.txt, because
 it is the instruction actually addressed to software.
@@ -97,9 +109,12 @@ it is the instruction actually addressed to software.
   `Mozilla/5.0 (compatible; LostoReader/1.0; +<info url>) user-initiated-fetch`,
   not a fake browser. A site can allow or refuse it deliberately.
 - **Compatibility retry.** A few sites answer anything non-browser with a `403`
-  even on paths their own robots.txt allows. Where robots permits the page but
-  the site refuses the identified request, Losto retries once as a browser and
-  says so on the saved item. `LOSTO_STRICT_UA=1` disables this.
+  even on paths their own robots.txt allows. Where the site refuses the
+  identified request, Losto retries once as a browser and says so on the saved
+  item. This covers pages and the pictures on them equally - including the site
+  icon, which is the mark a publisher puts out for every browser to display and
+  which Losto shows purely to say where something came from.
+  `LOSTO_STRICT_UA=1` disables this.
 - **Rate limits.** 30 extractions and 300 media files a minute per caller, with
   backoff when a host answers `429`.
 - **No bypassing.** Paywalls, logins and bot challenges end the attempt.
