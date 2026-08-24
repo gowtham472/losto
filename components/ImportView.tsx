@@ -30,13 +30,14 @@ import {
   TextArea,
   Well,
 } from "@/components/ui/primitives";
+import { Sheet } from "@/components/ui/sheet";
 import { useToast } from "@/components/ui/toast";
 import type { DownloadProgress } from "@/lib/assets";
 import { dedupeAssets, rewriteMedia } from "@/lib/media";
 import { splitPastedTranscript, titleFromPaste } from "@/lib/paste";
 import { COLLECTION_COLORS, SOURCES, detectSource, sourceInfo } from "@/lib/sources";
 import { useLibrary, useOnline } from "@/lib/store";
-import type { Asset, ExtractError, ExtractResult } from "@/lib/types";
+import type { Asset, ExtractError, ExtractResult, SourceId } from "@/lib/types";
 import { cn, countWords, extractUrls, formatBytes, readClipboard, readingMinutes } from "@/lib/utils";
 
 type Item = {
@@ -46,7 +47,7 @@ type Item = {
   error?: ExtractError;
 };
 
-const SUPPORTED = ["chatgpt", "claude", "perplexity"] as const;
+const FETCHED = ["chatgpt", "claude", "perplexity"] as const;
 
 export function ImportView() {
   const router = useRouter();
@@ -61,6 +62,9 @@ export function ImportView() {
   const [items, setItems] = useState<Item[]>([]);
   const [busy, setBusy] = useState(false);
   const [media, setMedia] = useState<DownloadProgress | null>(null);
+  const [pasteGuide, setPasteGuide] = useState<{ source: SourceId; code: string } | null>(
+    null,
+  );
 
   const [pasteTitle, setPasteTitle] = useState("");
   const [pasteBody, setPasteBody] = useState("");
@@ -69,6 +73,7 @@ export function ImportView() {
   const [tags, setTags] = useState("");
   const [newSubject, setNewSubject] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const pasteRef = useRef<HTMLTextAreaElement>(null);
 
   const links = useMemo(() => extractUrls(input).slice(0, 10), [input]);
   const singleSource = links.length === 1 ? detectSource(links[0]) : null;
@@ -90,6 +95,15 @@ export function ImportView() {
           body: JSON.stringify({ url: queue[i].url }),
         });
         const data = (await response.json()) as ExtractResult | ExtractError;
+        // Some conversations simply cannot be read from a link - the page is
+        // rendered in the browser, or the site turns automated requests away.
+        // Offer the copy-across route rather than leaving a dead end.
+        if (!data.ok && needsPaste(data as ExtractError)) {
+          const failure = data as ExtractError;
+          setPasteGuide({ source: failure.source, code: failure.code });
+          setItems([]);
+          break;
+        }
         setItems((prev) =>
           prev.map((it, idx) =>
             idx === i
@@ -151,7 +165,7 @@ export function ImportView() {
         ? `Downloading ${mediaCount} media ${mediaCount === 1 ? "file" : "files"} in the background - read on while it finishes.`
         : "Available offline from now on.",
     );
-    router.push(ready.length === 1 ? `/chat?id=${lastId}` : "/");
+    router.push(ready.length === 1 ? `/chat?id=${lastId}` : "/library");
   };
 
   const savePasted = async () => {
@@ -279,8 +293,8 @@ export function ImportView() {
                 </span>
               ) : (
                 <span className="text-[12px] text-ink-3">
-                  Supported: {SUPPORTED.map((s) => SOURCES[s].label).join(", ")} - other links are
-                  saved as readable articles.
+                  Works with {FETCHED.map((s) => SOURCES[s].label).join(", ")}, blogs and docs. Anything Losto
+                  cannot read, it will show you how to paste.
                 </span>
               )}
               <Button
@@ -309,6 +323,7 @@ export function ImportView() {
             <div className="space-y-1.5">
               <Label>Chat text</Label>
               <TextArea
+                ref={pasteRef}
                 value={pasteBody}
                 onChange={(e) => setPasteBody(e.target.value)}
                 rows={10}
@@ -464,7 +479,113 @@ export function ImportView() {
 
         {!items.length && mode === "link" ? <HowItWorks /> : null}
       </div>
+
+      <PasteGuide
+        guide={pasteGuide}
+        onClose={() => setPasteGuide(null)}
+        onSwitch={() => {
+          setPasteGuide(null);
+          setMode("text");
+          setItems([]);
+          // Give the panel a frame to mount before reaching for the field.
+          requestAnimationFrame(() => pasteRef.current?.focus());
+        }}
+      />
     </>
+  );
+}
+
+/**
+ * Whether a failed link is worth offering the copy-across route for.
+ *
+ * A chat that could not be read is almost always a page rendered in the reader's
+ * own browser, or a site that turns automated requests away - both fixed by
+ * pasting. A deleted or private link is not, so those keep their own message.
+ */
+function needsPaste(error: ExtractError): boolean {
+  if (error.source === "unknown" || error.source === "manual") return false;
+  return ["paste_only", "empty", "blocked", "unsupported"].includes(error.code);
+}
+
+/** Says what actually happened, rather than one guess stretched over four cases. */
+function whyNotFetched(code: string, label: string): string {
+  switch (code) {
+    case "blocked":
+      return `${label} turned the request away. Losto will not try to get around that, so the conversation has to come across by hand.`;
+    case "paste_only":
+      return `Losto no longer fetches ${label} conversations. Copying it across works just as well.`;
+    case "unsupported":
+      return `Losto cannot read that kind of ${label} link yet. Copying it across works today.`;
+    default:
+      return `Losto could not find a conversation at that link. ${label} usually builds the chat in your browser after the page loads, so a page fetched by a server is empty.`;
+  }
+}
+
+/**
+ * Shown when a conversation cannot be read from its link. It says what happened
+ * in one line, gives the steps, and drops the reader into the paste field - a
+ * dead end otherwise.
+ */
+function PasteGuide({
+  guide,
+  onClose,
+  onSwitch,
+}: {
+  guide: { source: SourceId; code: string } | null;
+  onClose: () => void;
+  onSwitch: () => void;
+}) {
+  if (!guide) return null;
+  const { source, code } = guide;
+  const info = sourceInfo(source);
+  const steps = info.pasteSteps ?? [
+    "Open the conversation in your browser.",
+    "Select the whole thing and copy it.",
+    "Come back here, switch to Paste text, and paste.",
+  ];
+
+  return (
+    <Sheet
+      open
+      onClose={onClose}
+      title={`Copy this ${info.label} chat across`}
+      description={whyNotFetched(code, info.label)}
+      footer={
+        <>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button variant="primary" onClick={onSwitch}>
+            <Type size={14} strokeWidth={2.2} />
+            Switch to Paste text
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <Well className="flex items-start gap-2.5 p-3">
+          <SourceMark source={guide.source} size="md" />
+          <p className="text-[12.5px] leading-relaxed text-ink-2">
+            Your browser can see it even though Losto cannot. Copy it across and everything is kept
+            - formatting, code blocks, tables and maths, exactly as they were.
+          </p>
+        </Well>
+
+        <ol className="space-y-2">
+          {steps.map((step, index) => (
+            <li key={step} className="flex gap-3">
+              <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-surface font-mono text-[10px] font-semibold text-ink-2 shadow-hairline">
+                {index + 1}
+              </span>
+              <span className="text-[13px] leading-relaxed text-ink">{step}</span>
+            </li>
+          ))}
+        </ol>
+
+        <p className="text-[11.5px] leading-relaxed text-ink-3">
+          If the chat still has “You said:” and “{info.label} said:” markers, Losto splits it back
+          into questions and answers automatically.
+        </p>
+      </div>
+    </Sheet>
   );
 }
 
@@ -579,11 +700,11 @@ function HowItWorks() {
   const steps = [
     {
       title: "Share the chat",
-      body: "In ChatGPT, Claude or Perplexity, tap Share and copy the public link.",
+      body: "In ChatGPT, Claude or any assistant, tap Share and copy the link. Any blog or docs URL works too.",
     },
     {
       title: "Paste it here",
-      body: "Losto fetches the full conversation - every answer, code block, table and formula.",
+      body: "Losto keeps the full conversation - every answer, code block, table and formula. If a link cannot be read, it shows you how to copy it across instead.",
     },
     {
       title: "Read it anywhere",
@@ -610,7 +731,8 @@ function HowItWorks() {
       <p className="mt-3 flex items-start gap-1.5 px-1 text-[11.5px] leading-relaxed text-ink-3">
         <Sparkles size={12} strokeWidth={2.2} className="mt-px shrink-0" />
         <span>
-          On Android you can also share a link straight from the ChatGPT app into Losto once it is
+          On Android you can also share a link straight from an assistant app or your browser into
+          Losto once it is
           installed to your home screen. <Link href="/settings" className="underline">Install it here.</Link>
         </span>
       </p>

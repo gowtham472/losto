@@ -17,13 +17,13 @@ import { Wordmark } from "@/components/AppShell";
 import { STUDIO } from "@/lib/legal";
 
 export const metadata: Metadata = {
-  title: "Losto - read your AI chats with no signal",
+  title: "Losto - save AI chats and articles to read offline",
   description:
-    "Paste a ChatGPT, Claude or blog link and keep the whole thing on your phone. Built for students whose campus wifi gives up right when they need their notes.",
+    "Paste a ChatGPT, Claude or Perplexity share link, or any blog post, and keep the whole thing on your phone - answers, code, tables and formulas. Built for students whose campus wifi gives up right when they need their notes.",
   openGraph: {
-    title: "Losto - read your AI chats with no signal",
+    title: "Losto - save AI chats and articles to read offline",
     description:
-      "Save ChatGPT answers, Claude chats and tech articles to your phone. Works in airplane mode. Nothing leaves your device.",
+      "Save AI conversations and tech articles to your phone. Works in airplane mode. No account, and nothing leaves your device.",
     type: "website",
   },
 };
@@ -110,7 +110,7 @@ function Hero() {
 
         <p className="mx-auto mt-5 max-w-[50ch] text-[15px] leading-relaxed text-ink-2 sm:text-[16px]">
           You spend an evening working through a question bank with ChatGPT. Next morning the
-          campus wifi drops and none of it is there. Losto takes a share link and keeps the whole
+          campus wifi drops and none of it is there. Losto takes the share link and keeps the whole
           conversation - every answer, table, formula and diagram - on your device.
         </p>
 
@@ -281,13 +281,14 @@ function SourcesBar() {
     { label: "Claude", tone: "var(--brand-claude)" },
     { label: "Perplexity", tone: "var(--brand-perplexity)" },
     { label: "Blogs & docs", tone: "var(--brand-manual)" },
+    { label: "Anything you paste", tone: "var(--brand-manual)" },
   ];
 
   return (
     <div className="border-y border-line bg-page">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 px-5 py-8 lg:flex-row lg:justify-between lg:px-8">
         <p className="shrink-0 font-mono text-[10.5px] font-semibold uppercase tracking-[0.08em] text-ink-3">
-          Reads from
+          Saves from
         </p>
         <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
           {items.map((item) => (
@@ -431,7 +432,7 @@ function HowItWorks() {
     {
       n: "01",
       title: "Copy the share link",
-      body: "In ChatGPT or Claude, hit Share and copy. Or grab the URL of any blog post or docs page.",
+      body: "Hit Share in ChatGPT, Claude or Perplexity and copy the link. Or grab the URL of any blog post or docs page.",
     },
     {
       n: "02",
@@ -547,11 +548,12 @@ function Features() {
 /** Being specific about the limits is more useful than claiming everything works. */
 function Sources() {
   const rows = [
-    ["ChatGPT", "Full conversation, code, tables, maths", "yes"],
-    ["Claude", "Full conversation, artifacts, thinking", "yes"],
+    ["ChatGPT share links", "Full conversation, code, tables, maths, images", "yes"],
     ["Blogs, docs, Medium", "Article text, code blocks, images, author and date", "yes"],
+    ["Pasted text", "Anything you copy yourself, split back into questions and answers", "yes"],
+    ["Claude, Perplexity and the rest", "Tried first. Most build the chat in your browser, so Losto shows you how to paste it across", "partial"],
     ["ChatGPT images", "OpenAI does not publish these in share links - add the file yourself in one tap", "partial"],
-    ["Perplexity", "Blocks all software from reading threads - paste the text instead", "no"],
+    ["Logins, paywalls, bot checks", "Never. Losto obeys robots.txt and bypasses no access control, ever", "no"],
   ];
 
   const dot = (state: string) =>
@@ -567,9 +569,10 @@ function Sources() {
           Including what it cannot.
         </h2>
         <p className="mt-4 text-[13.5px] leading-relaxed text-ink-2">
-          Some sites will not hand their content to software, and Losto does not pretend otherwise
-          or try to sneak around them. Where something cannot be fetched, it tells you why and
-          offers the paste-it-yourself route.
+          Losto reads one link at a time, only when you paste it, and only where the site&apos;s own
+          robots.txt allows. Plenty of chats are assembled inside your browser and are not in the
+          page at all. When a link cannot be read, Losto says so and walks you through copying it
+          across, which takes a few seconds.
         </p>
       </div>
 
@@ -734,7 +737,10 @@ function SiteFooter() {
           <p>
             © {new Date().getFullYear()} {STUDIO.name}. Losto stores everything on your device.
           </p>
-          <p>ChatGPT, Claude and Perplexity are trademarks of their respective owners.</p>
+          <p>
+            ChatGPT, Claude, Perplexity and other product names belong to their owners, who neither
+            endorse nor are affiliated with Losto.
+          </p>
         </div>
       </div>
     </footer>

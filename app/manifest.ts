@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 /**
  * `share_target` is what makes Losto show up in the Android share sheet, so a
- * share link can go straight from the ChatGPT app into the library.
+ * share link can go straight from an assistant or a browser into the library.
  */
 type ManifestWithShareTarget = MetadataRoute.Manifest & {
   share_target?: {
@@ -17,10 +17,10 @@ type ManifestWithShareTarget = MetadataRoute.Manifest & {
 export default function manifest(): ManifestWithShareTarget {
   return {
     id: "/",
-    name: "Losto - offline AI study library",
+    name: "Losto - offline study library",
     short_name: "Losto",
     description:
-      "Save ChatGPT, Claude and Perplexity chats to your phone and read them with no signal.",
+      "Save AI conversations and articles to your phone and read them with no signal.",
     start_url: "/library",
     scope: "/",
     display: "standalone",

@@ -1,11 +1,14 @@
 # Losto
 
-Paste a ChatGPT, Claude or blog link and Losto keeps the whole thing on your
-phone - every answer, code block, table, formula and diagram. It stays readable
-with no signal, no account, and nothing kept on a server.
+Paste an AI chat share link or a blog post and Losto keeps the whole thing on
+your phone - every answer, code block, table, formula and diagram. It stays
+readable with no signal, no account, and nothing kept on a server.
 
 Built for the case where you work through a question bank with an assistant at
 home, then need those answers on campus where the wifi gives up.
+
+How Losto fetches, and the reasoning behind it, is written down in
+[`FETCHING.md`](./FETCHING.md).
 
 Built by [DoodleByte Studio](https://doodlebytestudio.in), Chennai.
 
@@ -38,9 +41,12 @@ Built by [DoodleByte Studio](https://doodlebytestudio.in), Chennai.
 **Importing**
 
 - One link or ten at once, with a live preview before anything is saved.
-- **Paste text** fallback for anything that cannot be fetched. `You said:` /
-  `ChatGPT said:` markers are split back into questions and answers.
-- Android **share target** - send a link straight from the ChatGPT app.
+- **Paste text** for anything that cannot be fetched. `You said:` /
+  `<assistant> said:` markers are split back into questions and answers. When a
+  link cannot be read, Losto says why, shows the copy steps for that assistant
+  and puts the cursor in the paste field.
+- Android **share target** - send a link straight from an assistant app or the
+  browser.
 - File it into a subject and add tags as you save.
 
 **Library**
@@ -79,16 +85,34 @@ Built by [DoodleByte Studio](https://doodlebytestudio.in), Chennai.
 
 | Source | How it is read | Status |
 | --- | --- | --- |
-| ChatGPT | The public `/share/<id>` page, decoding its React Router stream payload | Works |
-| Claude | The public `/share/<uuid>` page | Works |
-| Blogs, docs, Medium | Scored article extraction with metadata and media | Works |
+| ChatGPT | The public `/share/<id>` page, decoding its React Router stream payload | Fetched |
+| Blogs, docs, Medium | Scored article extraction with metadata and media | Fetched |
+| Claude | `claude.ai/share/<id>`, the one path its robots.txt allows | Tried, usually falls back |
+| Perplexity | The public thread endpoint its robots.txt allows | Tried, often falls back |
+| Gemini, Grok, DeepSeek, Copilot, Le Chat | Article extraction against the share page | Tried, usually falls back |
+| Pasted text | Split back into questions and answers, media and all | Always available |
 | ChatGPT generated images | Not published by OpenAI - see [Media](#media) | Add the file yourself |
-| Perplexity | Their edge rejects every server-side request at the TLS handshake, whatever user agent is used | Paste text instead |
 
-Both assistants expose a private JSON API that would be far easier to parse.
-Both sit behind a `Disallow` in the site's own robots.txt, so Losto reads the
-page they publish instead. Every failure gives a specific reason - deleted,
-never shared publicly, rate-limited, bot-blocked - and offers the paste route.
+### Try, then fall back
+
+Losto attempts every source, along the one path that source's own robots.txt
+permits, and never anywhere else. What decides success is not policy but page
+construction: ChatGPT ships the conversation inside the share page, so it can be
+read. Claude and most other assistants assemble the chat in your browser after
+load, so the page a server receives is an empty shell - there is genuinely
+nothing there to save.
+
+When a fetch comes back empty, blocked or unsupported, Losto says which of those
+happened, shows the copy steps for that assistant, and puts the cursor in the
+paste field. Copying from your own browser session is access you already have,
+and the paste handling keeps formatting, code, tables and maths.
+
+Every source also carries a `fetchable` flag in `lib/sources.ts`. Setting it to
+`false` stops Losto contacting that source at all - the refusal happens in
+`extractChat` **before any request is made** - and sends readers straight to the
+paste route. Nothing else has to change, which makes it a workable answer if a
+provider ever objects. The reasoning behind all of this, including where it sits
+against terms of service and copyright, is in [`FETCHING.md`](./FETCHING.md).
 
 ## Articles
 
@@ -176,12 +200,19 @@ rather than a scraper:
 - **It does not bypass anything** - no paywalls, no logins, no bot challenges.
 - **It rate-limits itself**: 30 extractions and 300 media files a minute per
   caller, and backs off when a host answers `429`.
-- **It keeps attribution attached** to every saved article.
+- **It keeps attribution attached** to every saved article and chat.
+
+The full reasoning - robots.txt versus terms of service versus copyright, what
+Losto claims and what it does not, and the known risks - is in
+[`FETCHING.md`](./FETCHING.md).
 
 ## Configuration
 
-All optional except the effective date, which `/legal` requires before it will
-present itself as a valid notice.
+Copy [`.env.example`](./.env.example) to `.env.local`, or paste the same keys
+into your host's environment settings. All are optional except the effective
+date, which `/legal` requires before it will present itself as a valid notice.
+`NEXT_PUBLIC_*` values are inlined at build time, so changing one needs a
+rebuild.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
@@ -191,7 +222,7 @@ present itself as a valid notice.
 | `NEXT_PUBLIC_LOSTO_JURISDICTION` | `Chennai, Tamil Nadu, India` | Governing law |
 | **`NEXT_PUBLIC_LOSTO_EFFECTIVE`** | *unset* | **Required.** Effective date, e.g. `24 August 2026` |
 | `LOSTO_BOT_NAME` | `LostoReader` | Name used in the user agent and robots matching |
-| `LOSTO_BOT_URL` | GitHub URL | Where a site owner can read about the fetcher |
+| `LOSTO_BOT_URL` | a GitHub URL | Where a site owner lands from the user agent. **Point this at a page that exists** |
 | `LOSTO_USER_AGENT` | the honest agent | Overrides the agent entirely |
 | `LOSTO_STRICT_UA` | unset | `1` disables the browser retry |
 | `LOSTO_ASSET_HOSTS` | unset | Comma-separated allow list for the media proxy |
@@ -228,17 +259,23 @@ After deploying, check `/legal` shows no warning banner, `/robots.txt` returns
    warning instead of pretending to be a valid notice.
 2. **Have the notice reviewed.** `/legal` is drafted around India's DPDP Act,
    2023 and this app's local-first architecture. Add accounts, sync, payments or
-   analytics and it stops being accurate.
+   analytics and it stops being accurate. `FETCHING.md` records the fetching
+   position on the same assumptions and must be reviewed with it.
 3. **Choose a licence** and add a `LICENSE` file. Every dependency is permissive
    (MIT, BSD, ISC, Apache-2.0, 0BSD, CC-BY-4.0) with no copyleft, so the choice
    is unconstrained.
 4. **Keep `THIRD-PARTY-NOTICES.md` shipped and current.** It attributes 142
    packages plus four SIL Open Font License typefaces, which those licences
    require. Regenerate whenever dependencies change.
-5. **Check your host's logging.** Losto stores nothing, but a platform's default
+5. **Point `LOSTO_BOT_URL` at a real page.** It is the address every fetched
+   site sees in Losto's user agent. The default is a GitHub URL that may not
+   resolve, and an identifying agent whose link 404s is worse than no link at
+   all - `/legal` explains who is fetching and how to object, so it is the
+   obvious target.
+6. **Check your host's logging.** Losto stores nothing, but a platform's default
    access logs record IP addresses. The notice describes this - make sure the
    description matches reality.
-6. **Install the PWA on a real phone and test airplane mode.** Offline is the
+7. **Install the PWA on a real phone and test airplane mode.** Offline is the
    central promise; verify it on hardware before claiming it.
 
 ## Design

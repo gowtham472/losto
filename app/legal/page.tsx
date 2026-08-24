@@ -37,7 +37,9 @@ export default function LegalPage() {
           <Card className="space-y-2.5 p-4 text-[13px] leading-relaxed text-ink-2">
             <p>
               Losto keeps everything you save in your own browser&apos;s storage on your own
-              device. Your library is never uploaded, and there is no account to create.
+              device. Your library is never uploaded, and there is no account to create. It is a
+              reader: it fetches a page you paste, keeps a personal copy for you with its credit
+              attached, and republishes nothing.
             </p>
             <p>
               The one time Losto touches the network on your behalf is when you paste a link: the
@@ -53,7 +55,50 @@ export default function LegalPage() {
 
         {/* ------------------------------------------------------------ */}
         <section>
-          <SectionTitle index="02">Who is responsible</SectionTitle>
+          <SectionTitle index="02">What Losto does with a link</SectionTitle>
+          <Card className="space-y-2.5 p-4 text-[13px] leading-relaxed text-ink-2">
+            <p>
+              A browser cannot fetch another website directly, so when you paste a link the Losto
+              server makes that one request for you. The page is turned into readable text on the
+              way through and handed to your device. No copy is kept on the server, and no record of
+              what you saved is written anywhere we can see.
+            </p>
+            <ul className="ml-4 list-disc space-y-1.5">
+              <li>
+                <strong className="font-semibold text-ink">One address at a time</strong>, only when
+                you ask for it. Losto never crawls, never follows links and never re-fetches on a
+                schedule.
+              </li>
+              <li>
+                <strong className="font-semibold text-ink">robots.txt is read first</strong>, before
+                every page and every picture. If a site asks automated tools to leave a path alone,
+                Losto refuses it and tells you so.
+              </li>
+              <li>
+                <strong className="font-semibold text-ink">It says who it is.</strong> The request
+                identifies itself as Losto acting for a person, not as an anonymous browser, so any
+                site can allow or refuse it deliberately.
+              </li>
+              <li>
+                <strong className="font-semibold text-ink">It bypasses nothing</strong> - no logins,
+                no paywalls, no bot checks. If a page is not public, Losto stops.
+              </li>
+            </ul>
+            <p>
+              Many assistants build the conversation inside your browser after the page loads, so a
+              server receives an empty shell with nothing to save. When a link cannot be read, Losto
+              says which reason applied and shows you how to copy the conversation across yourself.
+            </p>
+            <p>
+              If you run a site and would rather Losto did not fetch it, write to {OPERATOR.email}.
+              Sources can be switched off individually, and that is the response you should expect.
+            </p>
+          </Card>
+        </section>
+
+        {/* ------------------------------------------------------------ */}
+        <section>
+          <SectionTitle index="03">Who is responsible</SectionTitle>
           <Card className="space-y-2.5 p-4 text-[13px] leading-relaxed text-ink-2">
             <p>
               <strong className="font-semibold text-ink">{OPERATOR.name}</strong> publishes Losto
@@ -72,7 +117,7 @@ export default function LegalPage() {
 
         {/* ------------------------------------------------------------ */}
         <section>
-          <SectionTitle index="03">What is processed, and why</SectionTitle>
+          <SectionTitle index="04">What is processed, and why</SectionTitle>
           <Card className="divide-y divide-line">
             <Item
               title="Your saved library"
@@ -107,7 +152,7 @@ export default function LegalPage() {
 
         {/* ------------------------------------------------------------ */}
         <section>
-          <SectionTitle index="04">Your rights</SectionTitle>
+          <SectionTitle index="05">Your rights</SectionTitle>
           <Card className="space-y-2.5 p-4 text-[13px] leading-relaxed text-ink-2">
             <p>Under the DPDP Act you may:</p>
             <ul className="ml-4 list-disc space-y-1.5">
@@ -144,7 +189,7 @@ export default function LegalPage() {
 
         {/* ------------------------------------------------------------ */}
         <section>
-          <SectionTitle index="05">Children</SectionTitle>
+          <SectionTitle index="06">Children</SectionTitle>
           <Card className="space-y-2.5 p-4 text-[13px] leading-relaxed text-ink-2">
             <p>
               The DPDP Act treats anyone under 18 as a child and requires verifiable parental
@@ -164,7 +209,7 @@ export default function LegalPage() {
 
         {/* ------------------------------------------------------------ */}
         <section>
-          <SectionTitle index="06">Content you save</SectionTitle>
+          <SectionTitle index="07">Content you save</SectionTitle>
           <Card className="space-y-2.5 p-4 text-[13px] leading-relaxed text-ink-2">
             <p>
               Articles, conversations, pictures and clips you save stay the property of whoever
@@ -172,10 +217,16 @@ export default function LegalPage() {
               the author and the original link attached to it, and never republishes it.
             </p>
             <p>
-              Please use it that way. Do not use Losto to copy material you are not allowed to read,
-              to get around a paywall or login, or to republish someone else&apos;s work as your
-              own. Losto will not fetch a page whose site asks automated tools to stay away, and it
+              Please use it that way. Do not use Losto to copy material you are not allowed to
+              read, to get around a paywall or login, or to republish someone else&apos;s work as
+              your own. Losto will not fetch a page whose site asks automated tools to stay away and
               will not attempt to bypass any access control.
+            </p>
+            <p>
+              Credit travels with the copy. Every saved article opens with its author, publication
+              and date and links to the original address; every saved chat keeps its source and a
+              link back; an exported Markdown file carries the same header. None of that can be
+              stripped by accident, because it is part of what gets stored.
             </p>
             <p>
               If you own content that someone has saved and you believe it is being misused, write
@@ -186,7 +237,7 @@ export default function LegalPage() {
 
         {/* ------------------------------------------------------------ */}
         <section>
-          <SectionTitle index="07">Terms of use</SectionTitle>
+          <SectionTitle index="08">Terms of use</SectionTitle>
           <Card className="space-y-2.5 p-4 text-[13px] leading-relaxed text-ink-2">
             <p>
               Losto is provided as-is, without warranty. It is a reading tool: it does not check
@@ -208,7 +259,7 @@ export default function LegalPage() {
 
         {/* ------------------------------------------------------------ */}
         <section>
-          <SectionTitle index="08">Open-source components</SectionTitle>
+          <SectionTitle index="09">Open-source components</SectionTitle>
           <Card className="space-y-2.5 p-4 text-[13px] leading-relaxed text-ink-2">
             <p>
               Losto is built on open-source software and open-licensed typefaces, each of which

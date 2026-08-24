@@ -33,11 +33,11 @@ const newsreader = Newsreader({
 
 export const metadata: Metadata = {
   title: {
-    default: "Losto - your AI chats, saved offline",
+    default: "Losto - AI answers, saved offline",
     template: "%s · Losto",
   },
   description:
-    "Paste a ChatGPT, Claude or Perplexity share link and keep the whole answer on your phone. Works with no signal.",
+    "Paste an AI chat share link, or any article, and keep the whole thing on your phone. Works with no signal.",
   applicationName: "Losto",
   manifest: "/manifest.webmanifest",
   appleWebApp: {

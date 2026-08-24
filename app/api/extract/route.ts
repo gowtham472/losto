@@ -62,6 +62,8 @@ function fail(
   const status =
     code === "bad_url" || code === "unsupported"
       ? 400
+      : code === "paste_only"
+        ? 409
       : code === "not_found"
         ? 404
         : code === "private"

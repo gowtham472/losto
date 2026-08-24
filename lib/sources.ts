@@ -10,6 +10,14 @@ export interface SourceInfo {
   /** Example share link shown as a placeholder / hint. */
   example?: string;
   supported: boolean;
+  /**
+   * Kill switch. Set to false and Losto stops fetching this source entirely,
+   * sending readers to the copy-and-paste route instead. Nothing else needs to
+   * change, so a source that objects can be switched off in seconds.
+   */
+  fetchable: boolean;
+  /** Shown when a paste-only link is pasted. */
+  pasteSteps?: string[];
 }
 
 export const SOURCES: Record<SourceId, SourceInfo> = {
@@ -21,6 +29,7 @@ export const SOURCES: Record<SourceId, SourceInfo> = {
     hosts: ["chatgpt.com", "chat.openai.com"],
     example: "https://chatgpt.com/share/…",
     supported: true,
+    fetchable: true,
   },
   claude: {
     id: "claude",
@@ -30,6 +39,12 @@ export const SOURCES: Record<SourceId, SourceInfo> = {
     hosts: ["claude.ai"],
     example: "https://claude.ai/share/…",
     supported: true,
+    fetchable: true,
+    pasteSteps: [
+      "Open the chat in Claude and scroll to the top.",
+      "Select the whole conversation and copy it.",
+      "Come back here, switch to Paste text, and paste.",
+    ],
   },
   perplexity: {
     id: "perplexity",
@@ -39,6 +54,12 @@ export const SOURCES: Record<SourceId, SourceInfo> = {
     hosts: ["perplexity.ai", "www.perplexity.ai"],
     example: "https://www.perplexity.ai/search/…",
     supported: true,
+    fetchable: true,
+    pasteSteps: [
+      "Open the thread in Perplexity.",
+      "Copy the answer with the copy button, or select and copy it.",
+      "Come back here, switch to Paste text, and paste.",
+    ],
   },
   gemini: {
     id: "gemini",
@@ -48,6 +69,12 @@ export const SOURCES: Record<SourceId, SourceInfo> = {
     hosts: ["gemini.google.com", "g.co", "aistudio.google.com"],
     example: "https://g.co/gemini/share/…",
     supported: true,
+    fetchable: true,
+    pasteSteps: [
+      "Open the shared chat in Gemini.",
+      "Select and copy the conversation.",
+      "Paste it here under Paste text.",
+    ],
   },
   grok: {
     id: "grok",
@@ -57,6 +84,12 @@ export const SOURCES: Record<SourceId, SourceInfo> = {
     hosts: ["grok.com", "x.com"],
     example: "https://grok.com/share/…",
     supported: true,
+    fetchable: true,
+    pasteSteps: [
+      "Open the conversation in Grok.",
+      "Select and copy it.",
+      "Paste it here under Paste text.",
+    ],
   },
   deepseek: {
     id: "deepseek",
@@ -65,6 +98,12 @@ export const SOURCES: Record<SourceId, SourceInfo> = {
     color: "var(--brand-deepseek)",
     hosts: ["chat.deepseek.com", "deepseek.com"],
     supported: true,
+    fetchable: true,
+    pasteSteps: [
+      "Open the chat in DeepSeek.",
+      "Select and copy it.",
+      "Paste it here under Paste text.",
+    ],
   },
   copilot: {
     id: "copilot",
@@ -73,6 +112,12 @@ export const SOURCES: Record<SourceId, SourceInfo> = {
     color: "var(--brand-copilot)",
     hosts: ["copilot.microsoft.com"],
     supported: true,
+    fetchable: true,
+    pasteSteps: [
+      "Open the conversation in Copilot.",
+      "Select and copy it.",
+      "Paste it here under Paste text.",
+    ],
   },
   mistral: {
     id: "mistral",
@@ -81,6 +126,12 @@ export const SOURCES: Record<SourceId, SourceInfo> = {
     color: "var(--brand-mistral)",
     hosts: ["chat.mistral.ai"],
     supported: true,
+    fetchable: true,
+    pasteSteps: [
+      "Open the chat in Le Chat.",
+      "Select and copy it.",
+      "Paste it here under Paste text.",
+    ],
   },
   manual: {
     id: "manual",
@@ -89,6 +140,7 @@ export const SOURCES: Record<SourceId, SourceInfo> = {
     color: "var(--brand-manual)",
     hosts: [],
     supported: true,
+    fetchable: true,
   },
   unknown: {
     id: "unknown",
@@ -97,6 +149,7 @@ export const SOURCES: Record<SourceId, SourceInfo> = {
     color: "var(--brand-manual)",
     hosts: [],
     supported: true,
+    fetchable: true,
   },
 };
 

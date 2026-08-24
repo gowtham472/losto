@@ -154,6 +154,7 @@ export interface ExtractError {
   code:
     | "bad_url"
     | "unsupported"
+    | "paste_only"
     | "not_found"
     | "private"
     | "blocked"

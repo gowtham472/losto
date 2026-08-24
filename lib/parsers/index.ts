@@ -1,5 +1,5 @@
 import { dedupeAssets, makeAsset, rewriteMedia } from "../media";
-import { detectSource } from "../sources";
+import { detectSource, sourceInfo } from "../sources";
 import type { Asset, ChatMessage, ExtractResult, SourceId } from "../types";
 import { deriveTitle } from "../utils";
 import { parseChatGpt } from "./chatgpt";
@@ -25,6 +25,21 @@ export async function extractChat(rawUrl: string): Promise<ExtractResult> {
   }
 
   const source: SourceId = detectSource(url.href);
+
+  /*
+   * The kill switch. Every source is fetched by default, along the one path its
+   * own robots.txt permits. If a source ever objects, flipping `fetchable` in
+   * lib/sources.ts stops Losto calling them at all and sends readers to the
+   * copy-and-paste route instead. Nothing else has to change.
+   */
+  if (!sourceInfo(source).fetchable) {
+    throw new ExtractProblem(
+      "paste_only",
+      `Losto no longer fetches ${sourceInfo(source).label} conversations.`,
+      "Open the chat, copy it, and paste it here. Formatting, code and tables are kept.",
+    );
+  }
+
   const result = await run(source, url.href);
   const withMedia = collectMedia(result, url.href);
 
