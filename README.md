@@ -81,13 +81,17 @@ Built by [DoodleByte Studio](https://doodlebytestudio.in), Chennai.
   before answering, so that restatement is what the checklist reads when the
   question itself has no usable list.
 - A numbered line in an answer counts as a question when it is a heading, a line
-  that is entirely bold, or a line followed by its answer. Consecutive numbered
-  lines are a list of steps, not a question bank, and are left alone.
-- Line endings are read the way Markdown reads them, so a bank copied out of a
-  PDF - which often separates lines with a bare carriage return - splits into
-  questions rather than collapsing into one. A list that starts at something
-  other than 1 is treated as having lost its opening entries, and the answer's
-  own list is used instead.
+  that is entirely bold, or a line with prose under it - and only the strongest
+  of those forms present is used, so the numbered list *inside* each answer is
+  not mistaken for more questions. Consecutive numbered lines are a list of
+  steps, not a question bank, and are left alone either way.
+- **A question may wrap.** A bank copied out of a PDF keeps the page's line
+  breaks, so a question runs across two or three lines and often leaves its
+  number stranded on a line of its own. Each item continues until a blank line
+  or the next number, and bare carriage returns count as line endings the way
+  Markdown counts them.
+- A list that starts at something other than 1 has lost its opening entries, so
+  the answer's own list is used instead.
 - Questions are **grouped by the heading they sit under**, so a bank spanning
   three modules reads as three sections with their own counts, and the numbering
   matches what is written in the answer rather than running 1-40.
