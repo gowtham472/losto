@@ -13,7 +13,7 @@ export interface DownloadProgress {
 
 export interface DownloadOutcome {
   stored: string[];
-  /** Assets we could not copy locally — they still render if the link works. */
+  /** Assets we could not copy locally - they still render if the link works. */
   skipped: { id: string; reason: "unavailable" | "too-large" | "failed" | "policy" }[];
   bytes: number;
 }

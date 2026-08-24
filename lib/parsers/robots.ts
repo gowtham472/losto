@@ -2,7 +2,7 @@
  * robots.txt support.
  *
  * Losto fetches on a person's behalf, one link at a time, but the request still
- * leaves the server rather than their browser — so it behaves like a well-run
+ * leaves the server rather than their browser - so it behaves like a well-run
  * bot: it identifies itself, reads robots.txt, and stays out of the paths a site
  * has asked automated clients to leave alone.
  */
@@ -25,7 +25,7 @@ interface Rule {
 interface Robots {
   rules: Rule[];
   crawlDelayMs: number;
-  /** No robots.txt, or it could not be read — treated as "no restrictions". */
+  /** No robots.txt, or it could not be read - treated as "no restrictions". */
   absent: boolean;
 }
 

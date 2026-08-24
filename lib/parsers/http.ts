@@ -222,7 +222,7 @@ export function statusProblem(status: number, source: SourceId): ExtractProblem 
       isChat ? "That chat is not publicly shared." : "That page is not public.",
       isChat
         ? "Open the chat, create a fresh public share link, then paste that one."
-        : "It may sit behind a login or paywall. Losto will not work around that — open it yourself and use “Paste text”.",
+        : "It may sit behind a login or paywall. Losto will not work around that - open it yourself and use “Paste text”.",
     );
   }
   if (status === 429) {

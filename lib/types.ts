@@ -24,7 +24,7 @@ export interface Asset {
   kind: AssetKind;
   /** Canonical remote address: the media file, or the watch page for an embed. */
   url: string;
-  /** What to actually download — an embed stores its poster frame instead. */
+  /** What to actually download - an embed stores its poster frame instead. */
   fetchUrl?: string;
   mime?: string;
   width?: number;

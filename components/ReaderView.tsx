@@ -146,7 +146,7 @@ export function ReaderView() {
   const mediaJob = chatId ? mediaJobs[chatId] : undefined;
 
   /*
-   * Some pictures are simply not published — ChatGPT keeps generated images out
+   * Some pictures are simply not published - ChatGPT keeps generated images out
    * of share links, for one. Letting the reader drop the file in themselves is
    * the only way those end up offline, and because the markdown already points
    * at the asset id, writing bytes there is all it takes.

@@ -27,7 +27,7 @@ export interface ExtractedArticle {
   html: string;
   /** Media discovered while resolving lazy and responsive sources. */
   assets: Asset[];
-  /** How confident the scoring was, 0..1 — low means it may have grabbed chrome. */
+  /** How confident the scoring was, 0..1 - low means it may have grabbed chrome. */
   confidence: number;
 }
 

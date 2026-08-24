@@ -155,7 +155,7 @@ export function makeAsset(input: {
 
 /**
  * The `/favicon.ico` every site answers, as an asset. Used to backfill items
- * saved before icons existed, and to repair one whose icon never downloaded —
+ * saved before icons existed, and to repair one whose icon never downloaded -
  * neither case has the original page HTML to read a better icon from.
  */
 export function originIconAsset(sourceUrl: string | undefined): Asset | null {

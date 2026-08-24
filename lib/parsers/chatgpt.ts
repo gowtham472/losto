@@ -283,7 +283,7 @@ function createResolver(share: string, cookies?: string) {
         unavailable: !resolved,
         unavailableReason: resolved
           ? undefined
-          : "ChatGPT does not include generated images in a public share link — they only load for someone signed in to the account. Nothing can fetch this one.",
+          : "ChatGPT does not include generated images in a public share link - they only load for someone signed in to the account. Nothing can fetch this one.",
       });
       if (asset) out.push(asset);
     }

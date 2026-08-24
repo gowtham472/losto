@@ -151,7 +151,7 @@ export function decodeEntities(text: string): string {
 /**
  * Finds the site's own icon so a saved item can carry the publisher's mark.
  *
- * Only the site's own declared icon is used — never a third-party favicon
+ * Only the site's own declared icon is used - never a third-party favicon
  * service, which would hand someone else a log of everything a reader saves.
  * The largest declared size wins, since these are stored once and scaled down.
  */
@@ -278,7 +278,7 @@ function getTurndown(): TurndownService {
       const el = node as HTMLElement;
       const raw = el.getAttribute?.("src") || el.getAttribute?.("data-src") || "";
       const src = raw.startsWith("//") ? `https:${raw}` : raw;
-      // Only players are worth keeping — every other iframe is furniture.
+      // Only players are worth keeping - every other iframe is furniture.
       const embed = src ? embedInfo(src) : null;
       if (!embed) return "";
       const label = el.getAttribute?.("title") || "";

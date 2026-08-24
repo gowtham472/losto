@@ -242,6 +242,13 @@
   .safe-top {
     padding-top: max(env(safe-area-inset-top), 0px);
   }
+  .landing-grid {
+    background-image: linear-gradient(to right, var(--line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+    background-size: 56px 56px;
+    -webkit-mask-image: radial-gradient(ellipse 65% 55% at 50% 0%, #000 30%, transparent 78%);
+    mask-image: radial-gradient(ellipse 65% 55% at 50% 0%, #000 30%, transparent 78%);
+  }
 }
 
 /* ---------------------------------------------------------------------------

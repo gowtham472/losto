@@ -1,5 +1,6 @@
 import {
   ArrowRight,
+  BarChart3,
   CloudOff,
   FileDown,
   GraduationCap,
@@ -8,6 +9,7 @@ import {
   Search,
   ShieldCheck,
   Smartphone,
+  WifiOff,
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -15,23 +17,30 @@ import { Wordmark } from "@/components/AppShell";
 import { STUDIO } from "@/lib/legal";
 
 export const metadata: Metadata = {
-  title: "Losto — read your AI chats with no signal",
+  title: "Losto - read your AI chats with no signal",
   description:
     "Paste a ChatGPT, Claude or blog link and keep the whole thing on your phone. Built for students whose campus wifi gives up right when they need their notes.",
   openGraph: {
-    title: "Losto — read your AI chats with no signal",
+    title: "Losto - read your AI chats with no signal",
     description:
       "Save ChatGPT answers, Claude chats and tech articles to your phone. Works in airplane mode. Nothing leaves your device.",
     type: "website",
   },
 };
 
+/**
+ * The marketing page is pinned to the dark palette regardless of the
+ * visitor's app theme - every color below still resolves through the same
+ * surface/ink/line tokens the app uses, just with `data-theme="dark"`
+ * scoped to this subtree so it cascades to every utility class inside.
+ */
 export default function LandingPage() {
   return (
-    <div className="min-h-dvh bg-page">
+    <div data-theme="dark" className="min-h-dvh bg-page">
       <SiteNav />
       <Hero />
-      <Problem />
+      <SourcesBar />
+      <Signal />
       <HowItWorks />
       <Features />
       <Sources />
@@ -45,24 +54,30 @@ export default function LandingPage() {
 /* -------------------------------------------------------------------------- */
 
 function SiteNav() {
+  const links = [
+    { href: "#how", label: "How it works" },
+    { href: "#sources", label: "What it reads" },
+    { href: "#privacy", label: "Privacy" },
+  ];
+
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-page/80 backdrop-blur-xl">
-      <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-5 lg:px-8">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-5 lg:px-8">
         <Wordmark />
-        <nav className="ml-auto hidden items-center gap-6 sm:flex">
-          <a href="#how" className="text-[13px] text-ink-2 transition-colors hover:text-ink">
-            How it works
-          </a>
-          <a href="#sources" className="text-[13px] text-ink-2 transition-colors hover:text-ink">
-            What it reads
-          </a>
-          <a href="#privacy" className="text-[13px] text-ink-2 transition-colors hover:text-ink">
-            Privacy
-          </a>
+        <nav className="ml-4 hidden items-center gap-1 sm:flex">
+          {links.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              className="rounded-full px-3 py-1.5 text-[13px] font-medium text-ink-2 transition-colors hover:bg-surface hover:text-ink"
+            >
+              {link.label}
+            </a>
+          ))}
         </nav>
         <Link
           href="/library"
-          className="ml-auto inline-flex h-8 shrink-0 items-center gap-1.5 rounded-control bg-ink px-3 text-[13px] font-semibold text-page shadow-btn transition-opacity hover:opacity-90 sm:ml-0"
+          className="ml-auto inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-ink px-4 text-[13px] font-semibold text-page shadow-btn transition-opacity hover:opacity-90"
         >
           Open Losto
           <ArrowRight size={13} strokeWidth={2.5} />
@@ -76,60 +91,133 @@ function SiteNav() {
 
 function Hero() {
   return (
-    <section className="mx-auto max-w-6xl px-5 pb-16 pt-14 lg:px-8 lg:pb-24 lg:pt-20">
-      <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)] lg:gap-16">
-        <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-inset px-2.5 py-1 text-[11.5px] font-medium text-ink-2 shadow-hairline">
-            <CloudOff size={11} strokeWidth={2.3} />
-            Works with the wifi off
-          </span>
+    <section className="relative overflow-hidden">
+      <div aria-hidden className="landing-grid pointer-events-none absolute inset-0" />
+      <PlusMarks />
+      <SignalLine />
 
-          <h1 className="mt-5 font-display text-[38px] font-bold leading-[1.05] tracking-[-0.04em] text-ink sm:text-[52px] lg:text-[58px]">
-            Your AI answers,
-            <br />
-            <span className="text-ink-3">on your phone.</span>
-          </h1>
+      <div className="relative mx-auto max-w-3xl px-5 pb-4 pt-16 text-center lg:px-8 lg:pt-24">
+        <span className="inline-flex items-center gap-2 rounded-full bg-surface px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-ink-2 shadow-hairline">
+          <CloudOff size={11} strokeWidth={2.4} className="text-accent" />
+          Works with the wifi off
+        </span>
 
-          <p className="mt-5 max-w-[46ch] text-[15px] leading-relaxed text-ink-2 sm:text-[16px]">
-            You spend an evening working through a question bank with ChatGPT. Next morning the
-            campus wifi drops and none of it is there. Losto takes a share link and keeps the whole
-            conversation — every answer, table, formula and diagram — on your device.
-          </p>
+        <h1 className="mx-auto mt-6 max-w-[15ch] font-display text-[40px] font-bold leading-[1.05] tracking-[-0.04em] text-ink sm:text-[54px] lg:text-[62px]">
+          Your AI answers,
+          <br />
+          <span className="text-ink-3">on your phone.</span>
+        </h1>
 
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link
-              href="/library"
-              className="inline-flex h-11 items-center gap-2 rounded-control bg-accent px-5 text-[14px] font-semibold text-accent-fg shadow-btn transition-opacity hover:opacity-90"
-            >
-              Start saving chats
-              <ArrowRight size={15} strokeWidth={2.5} />
-            </Link>
-            <a
-              href="#how"
-              className="inline-flex h-11 items-center gap-2 rounded-control bg-surface px-5 text-[14px] font-medium text-ink shadow-btn transition-colors hover:bg-hover"
-            >
-              See how it works
-            </a>
-          </div>
+        <p className="mx-auto mt-5 max-w-[50ch] text-[15px] leading-relaxed text-ink-2 sm:text-[16px]">
+          You spend an evening working through a question bank with ChatGPT. Next morning the
+          campus wifi drops and none of it is there. Losto takes a share link and keeps the whole
+          conversation - every answer, table, formula and diagram - on your device.
+        </p>
 
-          <p className="mt-5 text-[12.5px] text-ink-3">
-            Free. No account. Nothing uploaded anywhere.
-          </p>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <Link
+            href="/library"
+            className="inline-flex h-11 items-center gap-2 rounded-control bg-ink px-5 text-[14px] font-semibold text-page shadow-btn transition-opacity hover:opacity-90"
+          >
+            Start saving chats
+            <ArrowRight size={15} strokeWidth={2.5} />
+          </Link>
+          <a
+            href="#how"
+            className="inline-flex h-11 items-center gap-2 rounded-control bg-surface px-5 text-[14px] font-medium text-ink shadow-hairline transition-colors hover:bg-hover"
+          >
+            See how it works
+          </a>
         </div>
 
+        <p className="mt-5 text-[12.5px] text-ink-3">
+          Free. No account. Nothing uploaded anywhere.
+        </p>
+      </div>
+
+      <div className="relative mx-auto max-w-md px-5 pb-20 pt-10 lg:pb-28 lg:pt-14">
         <LibraryPreview />
       </div>
     </section>
   );
 }
 
+/** A handful of faint crosshairs marking grid intersections, like the reference. */
+function PlusMarks() {
+  const positions = [
+    "left-[8%] top-12",
+    "right-[9%] top-8",
+    "left-[14%] top-[210px]",
+    "right-[15%] top-[260px]",
+  ];
+
+  return (
+    <>
+      {positions.map((pos) => (
+        <svg
+          key={pos}
+          aria-hidden
+          viewBox="0 0 12 12"
+          className={`pointer-events-none absolute hidden size-3 text-line-strong sm:block ${pos}`}
+        >
+          <path d="M6 0v12M0 6h12" stroke="currentColor" strokeWidth="1" />
+        </svg>
+      ))}
+    </>
+  );
+}
+
+/** A stepped line dropping to zero, echoing the "wifi drops mid-answer" story. */
+function SignalLine() {
+  const points: [number, number][] = [
+    [16, 20],
+    [96, 20],
+    [96, 64],
+    [156, 64],
+    [156, 112],
+    [216, 112],
+    [216, 156],
+    [276, 156],
+  ];
+
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 300 200"
+      className="pointer-events-none absolute right-[2%] top-10 hidden h-[190px] w-[240px] opacity-60 lg:right-[6%] lg:block"
+    >
+      <path
+        d={points.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x} ${y}`).join(" ")}
+        fill="none"
+        stroke="var(--accent)"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      {points.map(([x, y]) => (
+        <rect
+          key={`${x}-${y}`}
+          x={x - 3}
+          y={y - 3}
+          width="6"
+          height="6"
+          rx="1.5"
+          fill="var(--page)"
+          stroke="var(--accent)"
+          strokeWidth="1.3"
+        />
+      ))}
+      <circle cx={276} cy={156} r="4.5" fill="var(--accent)" />
+    </svg>
+  );
+}
+
 /**
  * A miniature of the real library, built from the same tokens the app uses
- * rather than a screenshot — so it stays honest and themes with the page.
+ * rather than a screenshot - so it stays honest and themes with the page.
  */
 function LibraryPreview() {
   const items = [
-    { mark: "GPT", tone: "var(--brand-chatgpt)", title: "Thermodynamics — Unit 3 solved", meta: "18 turns · 12 min", progress: 62 },
+    { mark: "GPT", tone: "var(--brand-chatgpt)", title: "Thermodynamics - Unit 3 solved", meta: "18 turns · 12 min", progress: 62 },
     { mark: "CL", tone: "var(--brand-claude)", title: "Why does RuBisCO lose specificity?", meta: "6 turns · 4 min", progress: 100 },
     { mark: "WEB", tone: "var(--brand-manual)", title: "Scaling ArchUnit with Nebula", meta: "2,542 words · 6 code blocks", progress: 24 },
   ];
@@ -178,7 +266,7 @@ function LibraryPreview() {
 
       <span className="absolute -bottom-3 -left-3 inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1.5 text-[11.5px] font-semibold text-ink shadow-overlay">
         <span className="size-1.5 rounded-full bg-green" />
-        Airplane mode — still readable
+        Airplane mode - still readable
       </span>
     </div>
   );
@@ -186,29 +274,153 @@ function LibraryPreview() {
 
 /* -------------------------------------------------------------------------- */
 
-function Problem() {
-  const facts = [
-    ["Share links expire", "Delete the chat and the link dies. Your notes go with it."],
-    ["Images vanish first", "Generated diagrams are signed URLs that stop working within hours."],
-    ["Screenshots are useless", "You cannot search them, copy the code, or read them at any size."],
+/** An honest stand-in for a "trusted by" logo bar - what Losto actually reads from. */
+function SourcesBar() {
+  const items = [
+    { label: "ChatGPT", tone: "var(--brand-chatgpt)" },
+    { label: "Claude", tone: "var(--brand-claude)" },
+    { label: "Perplexity", tone: "var(--brand-perplexity)" },
+    { label: "Blogs & docs", tone: "var(--brand-manual)" },
   ];
 
   return (
-    <section className="border-y border-line bg-canvas">
-      <div className="mx-auto max-w-6xl px-5 py-14 lg:px-8 lg:py-20">
-        <h2 className="max-w-[22ch] font-display text-[26px] font-bold leading-tight tracking-[-0.03em] text-ink sm:text-[32px]">
-          A bookmark is not a backup.
-        </h2>
-        <div className="mt-8 grid gap-px overflow-hidden rounded-card bg-line shadow-hairline sm:grid-cols-3">
-          {facts.map(([title, body]) => (
-            <div key={title} className="bg-surface p-5">
-              <p className="text-[13.5px] font-semibold tracking-[-0.015em] text-ink">{title}</p>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-ink-2">{body}</p>
+    <div className="border-y border-line bg-page">
+      <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 px-5 py-8 lg:flex-row lg:justify-between lg:px-8">
+        <p className="shrink-0 font-mono text-[10.5px] font-semibold uppercase tracking-[0.08em] text-ink-3">
+          Reads from
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
+          {items.map((item) => (
+            <span
+              key={item.label}
+              className="flex items-center gap-2 text-[13.5px] font-semibold text-ink-2 opacity-70 grayscale transition hover:opacity-100 hover:grayscale-0"
+            >
+              <span className="size-2 rounded-full" style={{ background: item.tone }} />
+              {item.label}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+
+function Signal() {
+  const points: { title: string; body?: string }[] = [
+    { title: "Share links expire" },
+    { title: "Images vanish first" },
+    { title: "Screenshots are useless" },
+    {
+      title: "Losto keeps the copy",
+      body: "Every answer, code block, table and diagram - copied to your device the moment you paste the link, before anything can expire.",
+    },
+  ];
+
+  return (
+    <section className="border-b border-line bg-canvas">
+      <div className="mx-auto grid max-w-6xl gap-12 px-5 py-16 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:gap-16 lg:py-24">
+        <div>
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">
+            The problem
+          </p>
+          <h2 className="mt-3 font-display text-[30px] font-bold leading-[1.08] tracking-[-0.035em] text-ink sm:text-[38px]">
+            A bookmark
+            <br />
+            is not
+            <br />a backup.
+          </h2>
+
+          <ol className="mt-8">
+            {points.map((point) => (
+              <li
+                key={point.title}
+                className={`relative border-l-2 py-3.5 pl-5 ${point.body ? "border-accent" : "border-line-strong"}`}
+              >
+                <span
+                  className={`absolute -left-[5px] top-4 size-2 rounded-full ${point.body ? "bg-accent" : "bg-line-strong"}`}
+                />
+                <p
+                  className={`text-[14px] tracking-[-0.01em] ${
+                    point.body ? "font-semibold text-ink" : "font-medium text-ink-2"
+                  }`}
+                >
+                  {point.title}
+                </p>
+                {point.body && (
+                  <p className="mt-1.5 max-w-[46ch] text-[13px] leading-relaxed text-ink-2">
+                    {point.body}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        <div className="flex items-center justify-center pb-16 lg:pb-0">
+          <SignalCard />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** A floating stat card plus two message bubbles, mirroring the reference's product mockup. */
+function SignalCard() {
+  const rows = [
+    { label: "ChatGPT", tone: "var(--brand-chatgpt)", value: 12 },
+    { label: "Claude", tone: "var(--brand-claude)", value: 9 },
+    { label: "Blogs & docs", tone: "var(--brand-manual)", value: 5 },
+  ];
+  const max = Math.max(...rows.map((row) => row.value));
+
+  return (
+    <div className="relative mx-auto max-w-[380px] pb-20">
+      <div className="rounded-well bg-canvas p-4 shadow-raised">
+        <div className="flex items-center justify-between px-1 pb-3">
+          <p className="text-[13px] font-semibold tracking-[-0.01em] text-ink">Saved this week</p>
+          <span className="inline-flex items-center gap-1 rounded-full bg-inset px-2 py-1 text-[10.5px] font-medium text-ink-2">
+            <BarChart3 size={11} strokeWidth={2.2} />
+            Last 7 days
+          </span>
+        </div>
+        <div className="space-y-2.5 rounded-card bg-surface p-3.5 shadow-card">
+          {rows.map((row) => (
+            <div key={row.label} className="flex items-center gap-3">
+              <span className="w-[76px] shrink-0 text-[11.5px] font-medium text-ink-2">
+                {row.label}
+              </span>
+              <span className="h-2 flex-1 overflow-hidden rounded-full bg-inset">
+                <span
+                  className="block h-full rounded-full"
+                  style={{ width: `${(row.value / max) * 100}%`, background: row.tone }}
+                />
+              </span>
+              <span className="w-4 shrink-0 text-right font-mono text-[11px] tabnums text-ink-3">
+                {row.value}
+              </span>
             </div>
           ))}
         </div>
       </div>
-    </section>
+
+      <div className="absolute -bottom-2 -left-4 w-[220px] rounded-card bg-surface p-3 shadow-overlay">
+        <p className="flex items-center gap-1.5 font-mono text-[9.5px] font-semibold uppercase tracking-[0.06em] text-orange">
+          <WifiOff size={11} strokeWidth={2.4} />
+          Signal lost - 9:14 PM
+        </p>
+        <p className="mt-2 text-[12px] leading-snug text-ink">Wifi just dropped mid-question.</p>
+      </div>
+
+      <div className="absolute bottom-[-52px] right-0 w-[200px] rounded-card bg-surface p-3 shadow-overlay">
+        <p className="flex items-center gap-1.5 font-mono text-[9.5px] font-semibold uppercase tracking-[0.06em] text-green">
+          <span className="size-1.5 rounded-full bg-green" />
+          Already saved
+        </p>
+        <p className="mt-2 text-[12px] leading-snug text-ink">Reading it offline - nothing lost.</p>
+      </div>
+    </div>
   );
 }
 
@@ -224,7 +436,7 @@ function HowItWorks() {
     {
       n: "02",
       title: "Paste it into Losto",
-      body: "It pulls the full conversation — questions, answers, code blocks, tables, LaTeX — and copies every picture onto your device before the links expire.",
+      body: "It pulls the full conversation - questions, answers, code blocks, tables, LaTeX - and copies every picture onto your device before the links expire.",
     },
     {
       n: "03",
@@ -338,8 +550,8 @@ function Sources() {
     ["ChatGPT", "Full conversation, code, tables, maths", "yes"],
     ["Claude", "Full conversation, artifacts, thinking", "yes"],
     ["Blogs, docs, Medium", "Article text, code blocks, images, author and date", "yes"],
-    ["ChatGPT images", "OpenAI does not publish these in share links — add the file yourself in one tap", "partial"],
-    ["Perplexity", "Blocks all software from reading threads — paste the text instead", "no"],
+    ["ChatGPT images", "OpenAI does not publish these in share links - add the file yourself in one tap", "partial"],
+    ["Perplexity", "Blocks all software from reading threads - paste the text instead", "no"],
   ];
 
   const dot = (state: string) =>
@@ -447,7 +659,7 @@ function Closing() {
           Save one chat and see.
         </h2>
         <p className="mx-auto mt-4 max-w-[46ch] text-[13.5px] leading-relaxed text-ink-2">
-          Add it to your home screen and it behaves like any other app — except it keeps working
+          Add it to your home screen and it behaves like any other app - except it keeps working
           when the signal does not.
         </p>
         <Link

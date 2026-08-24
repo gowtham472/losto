@@ -35,7 +35,7 @@ export async function parsePerplexity(url: string): Promise<ExtractResult> {
       throw new ExtractProblem(
         "blocked",
         "Perplexity does not allow threads to be fetched by other software.",
-        "Open the thread, select the answer, copy it, then use “Paste text” here — formatting, tables and code are kept.",
+        "Open the thread, select the answer, copy it, then use “Paste text” here - formatting, tables and code are kept.",
       );
     }
     throw err;

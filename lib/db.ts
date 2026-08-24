@@ -50,7 +50,7 @@ function openDB(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(STORE_KV)) {
         db.createObjectStore(STORE_KV);
       }
-      // Added in v2 — existing libraries upgrade in place, keeping their chats.
+      // Added in v2 - existing libraries upgrade in place, keeping their chats.
       if (!db.objectStoreNames.contains(STORE_ASSETS)) {
         db.createObjectStore(STORE_ASSETS, { keyPath: "id" });
       }
@@ -190,7 +190,7 @@ export function putAsset(asset: StoredAsset): Promise<void> {
   );
 }
 
-/** Ids and sizes only — reading every blob just to total them would be wasteful. */
+/** Ids and sizes only - reading every blob just to total them would be wasteful. */
 export function assetSizes(): Promise<{ id: string; bytes: number }[]> {
   return tx(STORE_ASSETS, "readonly", (t) =>
     wrap(t.objectStore(STORE_ASSETS).getAll() as IDBRequest<StoredAsset[]>).then((all) =>

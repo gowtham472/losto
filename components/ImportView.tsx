@@ -148,7 +148,7 @@ export function ImportView() {
     toast.success(
       ready.length === 1 ? "Saved to your device" : `${ready.length} chats saved to your device`,
       mediaCount
-        ? `Downloading ${mediaCount} media ${mediaCount === 1 ? "file" : "files"} in the background — read on while it finishes.`
+        ? `Downloading ${mediaCount} media ${mediaCount === 1 ? "file" : "files"} in the background - read on while it finishes.`
         : "Available offline from now on.",
     );
     router.push(ready.length === 1 ? `/chat?id=${lastId}` : "/");

@@ -1,7 +1,7 @@
 # Losto
 
 Paste a ChatGPT, Claude or blog link and Losto keeps the whole thing on your
-phone — every answer, code block, table, formula and diagram. It stays readable
+phone - every answer, code block, table, formula and diagram. It stays readable
 with no signal, no account, and nothing kept on a server.
 
 Built for the case where you work through a question bank with an assistant at
@@ -25,12 +25,12 @@ Built by [DoodleByte Studio](https://doodlebytestudio.in), Chennai.
 
 ## How it works
 
-1. **Add** — paste a link on `/import`. `/api/extract` fetches it, because a
+1. **Add** - paste a link on `/import`. `/api/extract` fetches it, because a
    browser cannot fetch another origin directly. Nothing is stored server-side.
-2. **Store** — parsed messages go into IndexedDB. Metadata and message bodies
+2. **Store** - parsed messages go into IndexedDB. Metadata and message bodies
    live in separate object stores, so a library of hundreds of chats lists
    instantly without deserialising every answer. Media is stored as blobs.
-3. **Read** — a service worker precaches the app shell, so every route opens
+3. **Read** - a service worker precaches the app shell, so every route opens
    offline and the reader renders the original markdown exactly as written.
 
 ## Features
@@ -40,7 +40,7 @@ Built by [DoodleByte Studio](https://doodlebytestudio.in), Chennai.
 - One link or ten at once, with a live preview before anything is saved.
 - **Paste text** fallback for anything that cannot be fetched. `You said:` /
   `ChatGPT said:` markers are split back into questions and answers.
-- Android **share target** — send a link straight from the ChatGPT app.
+- Android **share target** - send a link straight from the ChatGPT app.
 - File it into a subject and add tags as you save.
 
 **Library**
@@ -62,7 +62,7 @@ Built by [DoodleByte Studio](https://doodlebytestudio.in), Chennai.
 
 - Every question you asked becomes a card: read it, reveal the answer, mark it
   known or for review.
-- Shuffle, restart, or replay only the ones you flagged. Keyboard driven —
+- Shuffle, restart, or replay only the ones you flagged. Keyboard driven -
   space reveals, arrows move.
 - Finishes with a confidence score and a known/to-review split.
 
@@ -70,7 +70,7 @@ Built by [DoodleByte Studio](https://doodlebytestudio.in), Chennai.
 
 - **Full-text search** across every saved answer, with snippets, offline.
 - **Subjects** with colours and symbols, plus a starter set for common modules.
-- **Backup** — export the library as one JSON file, restore it anywhere.
+- **Backup** - export the library as one JSON file, restore it anywhere.
   Duplicates are skipped.
 - **Export a chat** as Markdown.
 - **Installable** to the home screen, with an offline page and an offline banner.
@@ -82,13 +82,13 @@ Built by [DoodleByte Studio](https://doodlebytestudio.in), Chennai.
 | ChatGPT | The public `/share/<id>` page, decoding its React Router stream payload | Works |
 | Claude | The public `/share/<uuid>` page | Works |
 | Blogs, docs, Medium | Scored article extraction with metadata and media | Works |
-| ChatGPT generated images | Not published by OpenAI — see [Media](#media) | Add the file yourself |
+| ChatGPT generated images | Not published by OpenAI - see [Media](#media) | Add the file yourself |
 | Perplexity | Their edge rejects every server-side request at the TLS handshake, whatever user agent is used | Paste text instead |
 
 Both assistants expose a private JSON API that would be far easier to parse.
 Both sit behind a `Disallow` in the site's own robots.txt, so Losto reads the
-page they publish instead. Every failure gives a specific reason — deleted,
-never shared publicly, rate-limited, bot-blocked — and offers the paste route.
+page they publish instead. Every failure gives a specific reason - deleted,
+never shared publicly, rate-limited, bot-blocked - and offers the paste route.
 
 ## Articles
 
@@ -96,14 +96,14 @@ Paste a blog post, a docs page or a tutorial and Losto scores the page to find
 the block holding the writing, drops the navigation, share widgets, newsletter
 boxes and comment threads, then keeps:
 
-- **Code blocks** with their language — most of the value of a technical post.
+- **Code blocks** with their language - most of the value of a technical post.
   Any `<pre>` counts, not just `<pre><code>`, because several publishers style
   code with spans and no `<code>` element at all.
 - **Author, publication and date**, from Open Graph, JSON-LD or the byline.
 - **The canonical URL**, so the saved copy points at the real address.
-- **Images**, including lazy-loaded (`data-src`), responsive (`srcset` — widest
+- **Images**, including lazy-loaded (`data-src`), responsive (`srcset` - widest
   candidate wins) and `<picture>` sources.
-- **Animations and clips** — GIF/WebP as images, and the silent looping
+- **Animations and clips** - GIF/WebP as images, and the silent looping
   `<video>` most blogs use for animations, stored with its poster frame.
 
 Every saved article opens with a credit line naming the author, the publication
@@ -117,7 +117,7 @@ remembered the URL would show holes a day later, and nothing at all offline.
 
 1. Extraction rewrites every picture, clip and player in the markdown to a
    `losto-asset:<id>` reference and returns the media list with the messages.
-2. The browser cannot fetch those cross-origin, so `/api/asset` proxies them —
+2. The browser cannot fetch those cross-origin, so `/api/asset` proxies them -
    media content types only, size-capped, private addresses refused.
 3. The bytes land in IndexedDB. The reader resolves each reference to a `blob:`
    URL, so pictures and video work with the network off.
@@ -150,7 +150,7 @@ Saved items carry the real icon of the site they came from, read from the page's
 own `<link rel="icon">` (largest declared size wins, `apple-touch-icon`
 preferred) and stored alongside the chat so it shows offline.
 
-Two deliberate choices. No third-party favicon service is used — that would hand
+Two deliberate choices. No third-party favicon service is used - that would hand
 someone else a log of every site a reader saves. And nothing is hand-traced:
 each publisher's own icon stays accurate and survives a rebrand, without
 shipping redrawn trademarks. A tinted monogram stands in until the icon lands,
@@ -166,14 +166,14 @@ rather than a scraper:
 - **It reads robots.txt** before every page and media file, honours
   `Allow`/`Disallow` precedence and `Crawl-delay`, re-checks after a cross-host
   redirect, and refuses politely when a path is off limits.
-- **Compatibility retry.** A few sites — Medium among them — answer anything
+- **Compatibility retry.** A few sites - Medium among them - answer anything
   that is not a browser with a `403`, even on paths their own robots.txt allows
   for `*`. When robots.txt permits a page but the site refuses the identified
   request, Losto asks once more as a plain browser and **says so on the saved
   item**. robots.txt is treated as the site's real policy, the `403` as a
   heuristic. `LOSTO_STRICT_UA=1` disables the retry.
 - **It never crawls.** One URL per request, only when a person pastes it.
-- **It does not bypass anything** — no paywalls, no logins, no bot challenges.
+- **It does not bypass anything** - no paywalls, no logins, no bot challenges.
 - **It rate-limits itself**: 30 extractions and 300 media files a minute per
   caller, and backs off when a host answers `429`.
 - **It keeps attribution attached** to every saved article.
@@ -215,7 +215,7 @@ pnpm build && pnpm start
 
 ## Deploying
 
-Losto needs a Node runtime for `/api/extract` — a static export will not work.
+Losto needs a Node runtime for `/api/extract` - a static export will not work.
 Any Next.js host is fine. Serve it over HTTPS or the service worker and install
 prompt will not activate.
 
@@ -236,7 +236,7 @@ After deploying, check `/legal` shows no warning banner, `/robots.txt` returns
    packages plus four SIL Open Font License typefaces, which those licences
    require. Regenerate whenever dependencies change.
 5. **Check your host's logging.** Losto stores nothing, but a platform's default
-   access logs record IP addresses. The notice describes this — make sure the
+   access logs record IP addresses. The notice describes this - make sure the
    description matches reality.
 6. **Install the PWA on a real phone and test airplane mode.** Offline is the
    central promise; verify it on hardware before claiming it.

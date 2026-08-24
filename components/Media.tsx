@@ -64,7 +64,7 @@ function useAssetUrl(asset: Asset): { url: string | null; loading: boolean } {
     assetObjectUrl(asset.id)
       .then((found) => {
         if (cancelled) return;
-        // Nothing stored locally — fall back to the original link, which works
+        // Nothing stored locally - fall back to the original link, which works
         // while there is a connection and the signature has not expired.
         setState({
           url: found ?? (asset.unavailable ? null : (asset.fetchUrl ?? asset.url)),
@@ -90,7 +90,7 @@ export function MediaNode({ src, alt }: { src?: string; alt?: string }) {
   const id = parseAssetRef(src);
   const asset = useAsset(id);
 
-  // A picture that never went through the media pass — render it plainly.
+  // A picture that never went through the media pass - render it plainly.
   if (!id) {
     if (!src) return null;
     return (
@@ -285,7 +285,7 @@ function AudioBlock({ asset }: { asset: Asset }) {
 }
 
 /**
- * A player we cannot store — the poster frame is kept offline and the button
+ * A player we cannot store - the poster frame is kept offline and the button
  * opens the original, which is honest about needing a connection.
  */
 function EmbedBlock({ asset }: { asset: Asset }) {
@@ -367,7 +367,7 @@ function MissingMedia({
         {asset?.unavailableReason ??
           (asset?.unavailable
             ? "The source only serves this file to a signed-in session."
-            : "It was not downloaded — try Re-download media from the chat menu while online.")}
+            : "It was not downloaded - try Re-download media from the chat menu while online.")}
       </span>
 
       <span className="mt-1 flex flex-wrap items-center justify-center gap-2">

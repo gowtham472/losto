@@ -276,7 +276,7 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
       const messages = bodyCache.current.get(id) ?? (await db.getBody(id))?.messages ?? [];
       const existing = await db.getChat(id);
 
-      // The site icon is not attached to any message, so rebuild it here —
+      // The site icon is not attached to any message, so rebuild it here -
       // this is what repairs items saved before icons existed.
       const icon = existing?.faviconAssetId ? null : originIconAsset(existing?.sourceUrl);
       const assets = [...messages.flatMap((m) => m.assets ?? []), ...(icon ? [icon] : [])];

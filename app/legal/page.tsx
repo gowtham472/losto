@@ -25,7 +25,7 @@ export default function LegalPage() {
             <p className="text-[12.5px] leading-relaxed text-ink-2">
               <strong className="font-semibold text-ink">Not ready to publish.</strong> The
               publisher name, contact address and effective date are still placeholders. Set them
-              before release — a privacy notice without a reachable contact does not meet the DPDP
+              before release - a privacy notice without a reachable contact does not meet the DPDP
               Act&apos;s requirements.
             </p>
           </Well>
@@ -90,7 +90,7 @@ export default function LegalPage() {
               title="Ordinary connection records"
               purpose="Keeping the service running and secure."
               detail="Like any website, the hosting provider records the IP address, time and page of each request in its server logs. These are used only to operate the service and to stop abuse, and are kept for a short period before deletion."
-              basis="Legitimate use — running and securing the service you asked for."
+              basis="Legitimate use - running and securing the service you asked for."
             />
             <Item
               title="Settings on your device"
@@ -117,7 +117,7 @@ export default function LegalPage() {
                 copy immediately.
               </li>
               <li>
-                <strong className="font-semibold text-ink">Correct or complete</strong> it — every
+                <strong className="font-semibold text-ink">Correct or complete</strong> it - every
                 title, tag and note is editable in the app.
               </li>
               <li>
@@ -131,7 +131,7 @@ export default function LegalPage() {
                 your own device, this is handled by whoever can unlock the device.
               </li>
               <li>
-                <strong className="font-semibold text-ink">Complain</strong> — to the contact above,
+                <strong className="font-semibold text-ink">Complain</strong> - to the contact above,
                 and then to the Data Protection Board of India.
               </li>
               <li>

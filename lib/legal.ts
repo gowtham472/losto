@@ -3,7 +3,7 @@
  *
  * IMPORTANT: the values below are placeholders. Before releasing publicly they
  * must be replaced with the real publisher, a working grievance contact, and a
- * reviewed effective date — the DPDP Act requires a named, reachable contact for
+ * reviewed effective date - the DPDP Act requires a named, reachable contact for
  * data-principal requests, and a policy naming nobody satisfies nothing.
  */
 export const OPERATOR = {

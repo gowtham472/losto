@@ -19,7 +19,7 @@ const SIZES = {
  * ChatGPT, Claude and every blog show their real mark and it still works with
  * no connection. Using each publisher's own icon avoids shipping hand-traced
  * trademarks, and it stays right when a company changes its logo. Until the
- * icon lands — or if the site never served one — a tinted monogram stands in.
+ * icon lands - or if the site never served one - a tinted monogram stands in.
  */
 export function SourceMark({
   source,

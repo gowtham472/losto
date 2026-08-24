@@ -1,6 +1,6 @@
 @AGENTS.md
 
-# Losto — project rules
+# Losto - project rules
 
 ## Keep README.md current
 
@@ -12,14 +12,14 @@ Treat it as part of the change, not paperwork afterwards.
 - add, remove or materially alter a feature
 - add or change a route, an env var, or a `package.json` script
 - change how a source is fetched, or what Losto can and cannot read
-- change the fetching posture — robots.txt handling, user agent, rate limits
+- change the fetching posture - robots.txt handling, user agent, rate limits
 - add a dependency (also regenerate `THIRD-PARTY-NOTICES.md`)
 - change anything a person deploying this would need to know
 
 **Sections that go stale fastest:** Routes, Features, What it reads,
 Configuration, Before releasing publicly.
 
-Write what is true now. If something only half works, say which half — the
+Write what is true now. If something only half works, say which half - the
 "What it reads" table names the sources that do not work and why, and that
 honesty is the point. Do not describe intentions or planned work as though they
 already ship.

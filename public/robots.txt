@@ -1,5 +1,5 @@
-# Losto is a personal offline reading app. Its pages hold no public content —
-# every library lives in the reader's own browser — so there is nothing here
+# Losto is a personal offline reading app. Its pages hold no public content -
+# every library lives in the reader's own browser - so there is nothing here
 # worth indexing beyond the landing page.
 
 User-agent: *

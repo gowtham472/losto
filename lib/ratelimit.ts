@@ -4,7 +4,7 @@
  * It exists to stop Losto behaving like a scraper if a link is hammered or the
  * deployment is shared, which keeps the app a good neighbour and keeps the
  * operator out of trouble. In-memory, so each server instance keeps its own
- * count — enough for the traffic a personal deployment sees.
+ * count - enough for the traffic a personal deployment sees.
  */
 
 interface Bucket {

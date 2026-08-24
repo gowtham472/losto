@@ -343,7 +343,7 @@ export function SettingsView() {
           <Card className="divide-y divide-line">
             <Row
               label="Export everything"
-              hint="One JSON file with every chat, subject and tag. Pictures and clips stay on this device — after restoring, use Re-download media on a chat to fetch them again."
+              hint="One JSON file with every chat, subject and tag. Pictures and clips stay on this device - after restoring, use Re-download media on a chat to fetch them again."
             >
               <Button onClick={doExport} disabled={!chats.length}>
                 <Download size={13} strokeWidth={2.2} />
@@ -404,7 +404,7 @@ export function SettingsView() {
           </p>
           <p className="text-[11.5px] leading-relaxed text-ink-2">
             Saved articles keep their author and original link attached, and Losto respects
-            robots.txt — it will not fetch a page whose site asks automated tools to stay away.
+            robots.txt - it will not fetch a page whose site asks automated tools to stay away.
           </p>
           <Link
             href="/legal"
