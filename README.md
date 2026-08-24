@@ -1,11 +1,13 @@
 # Losto
 
-Paste a ChatGPT, Claude or Perplexity share link and Losto pulls the whole
-conversation onto your phone. It stays there - readable with no signal, no
-account, and nothing kept on a server.
+Paste a ChatGPT, Claude or blog link and Losto keeps the whole thing on your
+phone — every answer, code block, table, formula and diagram. It stays readable
+with no signal, no account, and nothing kept on a server.
 
-Built for the case where you generate answers to a question bank at home and
-then need them on campus, where the wifi gives up.
+Built for the case where you work through a question bank with an assistant at
+home, then need those answers on campus where the wifi gives up.
+
+Built by [DoodleByte Studio](https://doodlebytestudio.in), Chennai.
 
 ## Routes
 
@@ -13,124 +15,186 @@ then need them on campus, where the wifi gives up.
 | --- | --- |
 | `/` | Public landing page |
 | `/library` | The app. PWA `start_url`, so an installed Losto opens straight here |
-| `/chat?id=`, `/study/session?id=` | Reader and study session, both full-screen |
+| `/import` | Add a chat, by link or pasted text. Also the Android share target |
+| `/chat?id=` | Reader, full-screen |
+| `/study` · `/study/session?id=` | Study hub and a running card session |
+| `/search` · `/collections` · `/settings` | Full-text search, subjects, settings |
 | `/legal` | Privacy notice and terms |
+| `/offline` | Shown by the service worker when a page was never cached |
+| `/api/extract` · `/api/asset` | The only server-side code: fetch a page, proxy a media file |
 
 ## How it works
 
-1. **Add** - paste a share link on `/import`. A single Next.js route handler
-   (`/api/extract`) fetches the conversation, because browsers cannot fetch
-   another origin directly. Nothing is stored server-side.
-2. **Store** - the parsed messages go into IndexedDB on the device. Metadata and
-   message bodies live in separate object stores so a library of hundreds of
-   chats lists instantly without deserialising every answer.
-3. **Read** - a service worker precaches the app shell, so every route opens
-   offline. The reader renders the original markdown: code blocks, tables, LaTeX
-   and all.
+1. **Add** — paste a link on `/import`. `/api/extract` fetches it, because a
+   browser cannot fetch another origin directly. Nothing is stored server-side.
+2. **Store** — parsed messages go into IndexedDB. Metadata and message bodies
+   live in separate object stores, so a library of hundreds of chats lists
+   instantly without deserialising every answer. Media is stored as blobs.
+3. **Read** — a service worker precaches the app shell, so every route opens
+   offline and the reader renders the original markdown exactly as written.
 
 ## Features
 
-- **Import** one link or ten at once, with a live preview before saving.
-- **Pictures and video, kept offline** - see below.
-- **Paste text** fallback for chats that cannot be fetched - `You said:` /
-  `ChatGPT said:` markers are split back into questions and answers.
-- **Subjects and tags** for grouping by module, paper or unit.
-- **Study mode** turns each chat into question cards: read the question, reveal
-  the answer, mark it known or for review, and get a confidence summary.
-- **Full-text search** across every saved answer, offline.
-- **Reader controls** - text size, sans/serif/mono, chat or document layout,
-  optional reasoning traces, resume-where-you-left-off.
-- **Backup** - export the whole library as JSON and restore it on another
-  device. Duplicates are skipped on import.
-- **Installable** - home-screen install, and on Android a share target so a link
-  can go straight from the ChatGPT app into Losto.
+**Importing**
 
-## Source support
+- One link or ten at once, with a live preview before anything is saved.
+- **Paste text** fallback for anything that cannot be fetched. `You said:` /
+  `ChatGPT said:` markers are split back into questions and answers.
+- Android **share target** — send a link straight from the ChatGPT app.
+- File it into a subject and add tags as you save.
+
+**Library**
+
+- Cards or list, sorted by recent, last opened, title, length or oldest.
+- Filter by subject, source or favourites; quick text filter over the list.
+- **Pick up where you left off** for anything part-read.
+- Cards show a cover thumbnail, the source's own icon, tags, turn count,
+  reading time, stored media count and a reading-progress bar.
+
+**Reader**
+
+- Reading progress, an outline of every question, and resume-where-you-stopped.
+- Text size, sans/serif/mono, chat or document layout, optional reasoning traces.
+- Copy any answer, pin the important ones, open the original.
+- Images with click-to-enlarge, video and audio with controls, player cards.
+
+**Study mode**
+
+- Every question you asked becomes a card: read it, reveal the answer, mark it
+  known or for review.
+- Shuffle, restart, or replay only the ones you flagged. Keyboard driven —
+  space reveals, arrows move.
+- Finishes with a confidence score and a known/to-review split.
+
+**Everything else**
+
+- **Full-text search** across every saved answer, with snippets, offline.
+- **Subjects** with colours and symbols, plus a starter set for common modules.
+- **Backup** — export the library as one JSON file, restore it anywhere.
+  Duplicates are skipped.
+- **Export a chat** as Markdown.
+- **Installable** to the home screen, with an offline page and an offline banner.
+
+## What it reads
 
 | Source | How it is read | Status |
 | --- | --- | --- |
-| ChatGPT | The public `/share/<id>` page, decoding its React Router payload | Allowed by `Allow: /share/` in their robots.txt |
-| Claude | The public `/share/<uuid>` page | `/share/` is permitted; `/api/*` is not, so it is not used |
-| Perplexity | `perplexity.ai/rest/thread/<slug>` | Cloudflare blocks server-side requests - the app detects this and points you at Paste text |
-| Tech blogs and docs | Scored article extraction with metadata and media | See [Articles](#articles) |
-| Anything else | Embedded-JSON sniffing, then readable-article extraction | Best effort, flagged in the UI |
+| ChatGPT | The public `/share/<id>` page, decoding its React Router stream payload | Works |
+| Claude | The public `/share/<uuid>` page | Works |
+| Blogs, docs, Medium | Scored article extraction with metadata and media | Works |
+| ChatGPT generated images | Not published by OpenAI — see [Media](#media) | Add the file yourself |
+| Perplexity | Their edge rejects every server-side request at the TLS handshake, whatever user agent is used | Paste text instead |
 
-Both assistants expose a private JSON API that would be easier to parse. Both
-sit behind a `Disallow` in the site's robots.txt, so Losto reads the page they
-publish instead.
+Both assistants expose a private JSON API that would be far easier to parse.
+Both sit behind a `Disallow` in the site's own robots.txt, so Losto reads the
+page they publish instead. Every failure gives a specific reason — deleted,
+never shared publicly, rate-limited, bot-blocked — and offers the paste route.
 
 ## Articles
 
 Paste a blog post, a docs page or a tutorial and Losto scores the page to find
-the block that actually holds the writing, drops the navigation, share widgets,
-newsletter boxes and comment threads, then keeps:
+the block holding the writing, drops the navigation, share widgets, newsletter
+boxes and comment threads, then keeps:
 
-- **Code blocks** with their language, which is most of the value of a tech post
-- **Author, publication and date**, read from Open Graph, JSON-LD or the byline
-- **The canonical URL**, so the saved copy points at the real address
-- **Images**, including lazy-loaded (`data-src`), responsive (`srcset` - the
-  widest candidate wins) and `<picture>` sources
-- **Animations and clips** - GIF/WebP as images, and the silent looping `<video>`
-  most blogs use, stored and replayed locally with its poster frame
+- **Code blocks** with their language — most of the value of a technical post.
+  Any `<pre>` counts, not just `<pre><code>`, because several publishers style
+  code with spans and no `<code>` element at all.
+- **Author, publication and date**, from Open Graph, JSON-LD or the byline.
+- **The canonical URL**, so the saved copy points at the real address.
+- **Images**, including lazy-loaded (`data-src`), responsive (`srcset` — widest
+  candidate wins) and `<picture>` sources.
+- **Animations and clips** — GIF/WebP as images, and the silent looping
+  `<video>` most blogs use for animations, stored with its poster frame.
 
 Every saved article opens with a credit line naming the author, the publication
 and the original link.
 
-### Source icons
-
-Saved items are marked with the real icon of the site they came from — ChatGPT's,
-Claude's, or the blog's. The icon is read from the page's own `<link rel="icon">`
-(largest declared size wins, `apple-touch-icon` preferred) and stored alongside
-the chat, so it still shows with no connection.
-
-Two deliberate choices here. No third-party favicon service is used, because that
-would hand someone else a log of every site a reader saves. And nothing is
-hand-traced: using each publisher's own icon keeps the mark accurate, keeps
-working when a company rebrands, and avoids shipping redrawn trademarks. A
-tinted monogram stands in until the icon arrives, or if a site serves none.
-
-Every failure path gives a specific reason (deleted, never shared publicly,
-rate-limited, bot-blocked) and offers the manual paste route.
-
 ## Media
 
-Diagrams and generated images are often the answer, so Losto stores the bytes
-rather than the link. Assistant media URLs are signed and expire within hours; a
-saved chat that only remembered the URL would show holes a day later, and
-nothing at all with no signal.
+Diagrams are often the answer, so Losto stores the bytes rather than the link.
+Assistant media URLs are signed and expire within hours; a saved chat that only
+remembered the URL would show holes a day later, and nothing at all offline.
 
 1. Extraction rewrites every picture, clip and player in the markdown to a
-   `losto-asset:<id>` reference and returns the media list alongside the
-   messages.
+   `losto-asset:<id>` reference and returns the media list with the messages.
 2. The browser cannot fetch those cross-origin, so `/api/asset` proxies them —
-   media content types only, size-capped, private addresses refused. Set
-   `LOSTO_ASSET_HOSTS` to a comma-separated list to narrow it further.
+   media content types only, size-capped, private addresses refused.
 3. The bytes land in IndexedDB. The reader resolves each reference to a `blob:`
-   URL, so images and video play with the network off.
+   URL, so pictures and video work with the network off.
 
-Downloads run **in the background** — the chat is readable the moment it is
-saved, and the pictures fill in behind it. Anything still missing falls back to
-the original link while you are online, and shows a labelled placeholder when
-you are not.
+Downloads run **in the background**: the chat is readable the moment it is
+saved and the pictures fill in behind it. Anything still missing falls back to
+the original link while online, and shows a labelled placeholder when not.
 
 | Kind | Behaviour |
 | --- | --- |
-| Images | Stored and rendered inline, click to enlarge, caption from the alt text or the generation prompt |
+| Images | Stored and shown inline, click to enlarge, caption from alt text or the generation prompt |
 | Video / audio | Stored and played from the local copy with normal controls |
-| YouTube, Vimeo, Loom | The poster frame is stored for offline; the play button opens the original, which needs a connection |
-| ChatGPT generated images | **Not published by OpenAI.** A share link viewed while signed out shows no generated images at all — verified in a real browser. Losto still finds them, marks the spot, explains why, and offers to take the file from your device |
+| YouTube, Vimeo, Loom | Poster frame stored for offline; the play button opens the original, which needs a connection |
+| ChatGPT generated images | **Not published by OpenAI.** A share link viewed while signed out shows no generated images at all. Losto still finds them, marks the spot and explains why |
 
-Controls live in Settings → Pictures and video: copy all media, images only, or
-nothing, plus a per-file size cap. Individual chats can retry through
-**Re-download media** in the chat menu.
+Controls live in Settings → Pictures and video: all media, images only, or off,
+plus a per-file size cap. A single chat can retry through **Re-download media**.
 
 ### Adding a picture yourself
 
-Where media cannot be fetched, the placeholder offers **Add from device**. Pick
-the file and it is stored under the same asset id the markdown already points
-at, so the picture appears exactly where it belongs and works offline from then
-on. This is the only way to keep a ChatGPT-generated diagram, and it doubles as
-a way to attach a screenshot or a photo of handwritten notes.
+Where media cannot be fetched, the placeholder offers **Add from device**. The
+file is stored under the same asset id the markdown already points at, so the
+picture appears exactly where it belongs and works offline from then on. This is
+the only way to keep a ChatGPT-generated diagram, and it doubles as a way to
+attach a screenshot or a photo of handwritten notes.
+
+### Source icons
+
+Saved items carry the real icon of the site they came from, read from the page's
+own `<link rel="icon">` (largest declared size wins, `apple-touch-icon`
+preferred) and stored alongside the chat so it shows offline.
+
+Two deliberate choices. No third-party favicon service is used — that would hand
+someone else a log of every site a reader saves. And nothing is hand-traced:
+each publisher's own icon stays accurate and survives a rebrand, without
+shipping redrawn trademarks. A tinted monogram stands in until the icon lands,
+or if a site serves none.
+
+## Being a good citizen
+
+Losto fetches from other people's servers, so it behaves like a well-run bot
+rather than a scraper:
+
+- **It identifies itself first.** The default agent is
+  `Mozilla/5.0 (compatible; LostoReader/1.0; +<info url>) user-initiated-fetch`.
+- **It reads robots.txt** before every page and media file, honours
+  `Allow`/`Disallow` precedence and `Crawl-delay`, re-checks after a cross-host
+  redirect, and refuses politely when a path is off limits.
+- **Compatibility retry.** A few sites — Medium among them — answer anything
+  that is not a browser with a `403`, even on paths their own robots.txt allows
+  for `*`. When robots.txt permits a page but the site refuses the identified
+  request, Losto asks once more as a plain browser and **says so on the saved
+  item**. robots.txt is treated as the site's real policy, the `403` as a
+  heuristic. `LOSTO_STRICT_UA=1` disables the retry.
+- **It never crawls.** One URL per request, only when a person pastes it.
+- **It does not bypass anything** — no paywalls, no logins, no bot challenges.
+- **It rate-limits itself**: 30 extractions and 300 media files a minute per
+  caller, and backs off when a host answers `429`.
+- **It keeps attribution attached** to every saved article.
+
+## Configuration
+
+All optional except the effective date, which `/legal` requires before it will
+present itself as a valid notice.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `NEXT_PUBLIC_LOSTO_OPERATOR` | `DoodleByte Studio` | Publisher named in the privacy notice |
+| `NEXT_PUBLIC_LOSTO_CONTACT` | `doodlebyte.studio@gmail.com` | Where data requests go |
+| `NEXT_PUBLIC_LOSTO_GRIEVANCE` | same as contact | Grievance contact the DPDP Act requires |
+| `NEXT_PUBLIC_LOSTO_JURISDICTION` | `Chennai, Tamil Nadu, India` | Governing law |
+| **`NEXT_PUBLIC_LOSTO_EFFECTIVE`** | *unset* | **Required.** Effective date, e.g. `24 August 2026` |
+| `LOSTO_BOT_NAME` | `LostoReader` | Name used in the user agent and robots matching |
+| `LOSTO_BOT_URL` | GitHub URL | Where a site owner can read about the fetcher |
+| `LOSTO_USER_AGENT` | the honest agent | Overrides the agent entirely |
+| `LOSTO_STRICT_UA` | unset | `1` disables the browser retry |
+| `LOSTO_ASSET_HOSTS` | unset | Comma-separated allow list for the media proxy |
 
 ## Running it
 
@@ -151,9 +215,31 @@ pnpm build && pnpm start
 
 ## Deploying
 
-Losto needs a Node runtime for `/api/extract` - a static export will not work.
-Any Next.js host (Vercel, Fly, a VPS) is fine. Serve it over HTTPS or the
-service worker and install prompt will not activate.
+Losto needs a Node runtime for `/api/extract` — a static export will not work.
+Any Next.js host is fine. Serve it over HTTPS or the service worker and install
+prompt will not activate.
+
+After deploying, check `/legal` shows no warning banner, `/robots.txt` returns
+200, and `/api/asset` returns `400` rather than `404`.
+
+## Before releasing publicly
+
+1. **Set `NEXT_PUBLIC_LOSTO_EFFECTIVE`.** Until it exists, `/legal` shows a
+   warning instead of pretending to be a valid notice.
+2. **Have the notice reviewed.** `/legal` is drafted around India's DPDP Act,
+   2023 and this app's local-first architecture. Add accounts, sync, payments or
+   analytics and it stops being accurate.
+3. **Choose a licence** and add a `LICENSE` file. Every dependency is permissive
+   (MIT, BSD, ISC, Apache-2.0, 0BSD, CC-BY-4.0) with no copyleft, so the choice
+   is unconstrained.
+4. **Keep `THIRD-PARTY-NOTICES.md` shipped and current.** It attributes 142
+   packages plus four SIL Open Font License typefaces, which those licences
+   require. Regenerate whenever dependencies change.
+5. **Check your host's logging.** Losto stores nothing, but a platform's default
+   access logs record IP addresses. The notice describes this — make sure the
+   description matches reality.
+6. **Install the PWA on a real phone and test airplane mode.** Offline is the
+   central promise; verify it on hardware before claiming it.
 
 ## Design
 
@@ -161,60 +247,12 @@ The interface follows the [Beautiful UI](https://www.beautifului.dev) system:
 OKLCH surface/ink/line tokens, hairline-ring shadows instead of borders, tight
 negative letter-spacing and a small type scale. Typefaces are Plus Jakarta Sans
 for the interface, Bricolage Grotesque for display, JetBrains Mono for code, and
-Newsreader for the serif reading mode.
+Newsreader for the serif reading mode. The landing page is built from the same
+tokens as the app rather than a separate template.
 
 ## Privacy
 
 The only network request Losto makes on your behalf is fetching a link you
 paste. The response goes straight to your device. There is no account, no
-analytics and no server-side storage.
-
-## Being a good citizen
-
-Losto fetches from other people's servers, so it behaves like a well-run bot
-rather than a scraper:
-
-- **It identifies itself first.** The user agent is
-  `Mozilla/5.0 (compatible; LostoReader/1.0; +<info url>) user-initiated-fetch`,
-  not a fake browser. Override with `LOSTO_USER_AGENT`, `LOSTO_BOT_NAME` and
-  `LOSTO_BOT_URL`.
-- **It reads robots.txt** before every page and every media file, honours
-  `Allow`/`Disallow` precedence and `Crawl-delay`, re-checks after a cross-host
-  redirect, and refuses politely when a path is off limits.
-- **Compatibility retry.** A few sites — Medium among them — answer anything
-  that is not a browser with a `403`, even on paths their own robots.txt allows
-  for `*`. When robots.txt permits a page but the site refuses the identified
-  request, Losto asks once more as a plain browser and **says so on the saved
-  item**. robots.txt is treated as the site's real policy; the `403` as a
-  heuristic. Set `LOSTO_STRICT_UA=1` to disable the retry and always stay
-  identified, accepting that those sites will not import.
-- **It never crawls.** One URL per request, only when a person pastes it. No
-  link-following, no bulk jobs, no scheduled re-fetching.
-- **It does not bypass anything** — no paywalls, no logins, no bot challenges.
-  When it meets one, it says so and offers Paste text.
-- **It rate-limits itself** per caller: 30 extractions and 300 media files a
-  minute, and it backs off when a host answers `429`.
-- **It keeps attribution attached** to every saved article.
-
-## Before releasing publicly
-
-The repository ships the pieces, but a few of them need real values and a
-lawyer's eye — this is engineering work, not legal advice.
-
-1. **Fill in the operator details.** `lib/legal.ts` reads
-   `NEXT_PUBLIC_LOSTO_OPERATOR`, `NEXT_PUBLIC_LOSTO_CONTACT`,
-   `NEXT_PUBLIC_LOSTO_GRIEVANCE`, `NEXT_PUBLIC_LOSTO_JURISDICTION` and
-   `NEXT_PUBLIC_LOSTO_EFFECTIVE`. Until they are set, `/legal` shows a warning
-   banner instead of pretending to be a valid notice.
-2. **Have the notice reviewed.** `/legal` is drafted around India's DPDP Act,
-   2023 and this app's local-first architecture. If you add accounts, sync,
-   payments or analytics, it stops being accurate and must be rewritten.
-3. **Choose a licence** for your own code and add a `LICENSE` file. Every
-   dependency is permissive (MIT, BSD, ISC, Apache-2.0, 0BSD, CC-BY-4.0) with no
-   copyleft, so the choice is entirely yours.
-4. **Keep `THIRD-PARTY-NOTICES.md` shipped and current.** It attributes 142
-   packages plus four SIL Open Font License typefaces, which those licences
-   require. Regenerate it whenever dependencies change.
-5. **Check your host's logging.** Losto stores nothing, but a platform's default
-   access logs record IP addresses. The notice describes this; make sure the
-   description matches what your host actually does.
+analytics, no tracking and no server-side storage. Delete a chat and it is gone;
+uninstall and everything goes with it.
