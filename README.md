@@ -7,6 +7,15 @@ account, and nothing kept on a server.
 Built for the case where you generate answers to a question bank at home and
 then need them on campus, where the wifi gives up.
 
+## Routes
+
+| Route | What it is |
+| --- | --- |
+| `/` | Public landing page |
+| `/library` | The app. PWA `start_url`, so an installed Losto opens straight here |
+| `/chat?id=`, `/study/session?id=` | Reader and study session, both full-screen |
+| `/legal` | Privacy notice and terms |
+
 ## How it works
 
 1. **Add** - paste a share link on `/import`. A single Next.js route handler

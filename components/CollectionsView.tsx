@@ -79,7 +79,7 @@ export function CollectionsView() {
               return (
                 <Card key={collection.id} className="flex items-center gap-3 p-3">
                   <Link
-                    href={`/?collection=${collection.id}`}
+                    href={`/library?collection=${collection.id}`}
                     className="flex min-w-0 flex-1 items-center gap-3"
                   >
                     <span className="font-mono text-[10.5px] tabnums text-ink-3">
@@ -119,7 +119,7 @@ export function CollectionsView() {
 
             {unsorted ? (
               <Link
-                href="/"
+                href="/library"
                 className="flex items-center gap-3 rounded-card bg-inset p-3 shadow-hairline transition-colors hover:bg-hover"
               >
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-surface text-ink-3 shadow-hairline">

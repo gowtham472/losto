@@ -17,7 +17,7 @@ export default function OfflinePage() {
           title="This page needs a connection"
           description="Your saved chats do not - head back to the library and everything you have stored is still there."
           action={
-            <Link href="/">
+            <Link href="/library">
               <Button variant="primary">Open my library</Button>
             </Link>
           }

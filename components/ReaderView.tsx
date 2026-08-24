@@ -179,7 +179,7 @@ export function ReaderView() {
           title="That chat is not on this device"
           description="It may have been deleted, or saved on another device. Restore a backup from Settings if you have one."
           action={
-            <Link href="/">
+            <Link href="/library">
               <Button variant="primary">Back to library</Button>
             </Link>
           }
@@ -201,7 +201,7 @@ export function ReaderView() {
             variant="ghost"
             size="icon"
             aria-label="Back"
-            onClick={() => (history.length > 1 ? router.back() : router.push("/"))}
+            onClick={() => (history.length > 1 ? router.back() : router.push("/library"))}
           >
             <ArrowLeft size={16} strokeWidth={2.2} />
           </Button>
@@ -437,7 +437,7 @@ export function ReaderView() {
         <ChatActions
           chat={chat}
           onClose={() => setMenuOpen(false)}
-          onDeleted={() => router.push("/")}
+          onDeleted={() => router.push("/library")}
         />
       ) : null}
     </div>

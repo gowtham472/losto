@@ -18,7 +18,7 @@ import { useLibrary, useOnline } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/", label: "Library", icon: Library, exact: true },
+  { href: "/library", label: "Library", icon: Library, exact: true },
   { href: "/search", label: "Search", icon: Search },
   { href: "/collections", label: "Subjects", icon: FolderClosed },
   { href: "/study", label: "Study", icon: GraduationCap },
@@ -31,11 +31,15 @@ function isActive(pathname: string, href: string, exact?: boolean) {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  // The reader and a running study session take over the whole screen; both
-  // carry their subject in the query string, so match on the path exactly.
-  const immersive = pathname === "/chat" || pathname === "/study/session";
+  /*
+   * The landing page is a public page, and the reader and a running study
+   * session take over the whole screen. None of them want the app chrome. The
+   * two immersive routes carry their subject in the query string, so the paths
+   * are matched exactly.
+   */
+  const bare = pathname === "/" || pathname === "/chat" || pathname === "/study/session";
 
-  if (immersive) return <>{children}</>;
+  if (bare) return <>{children}</>;
 
   return (
     <div className="flex min-h-dvh flex-col lg:flex-row">
@@ -77,7 +81,7 @@ function DesktopSidebar({ pathname }: { pathname: string }) {
 
   return (
     <aside className="sticky top-0 hidden h-dvh w-[236px] shrink-0 flex-col gap-1 border-r border-line bg-canvas px-3 py-4 lg:flex">
-      <Link href="/" className="mb-3 flex items-center gap-2 px-2">
+      <Link href="/library" className="mb-3 flex items-center gap-2 px-2">
         <Wordmark />
       </Link>
 
@@ -108,7 +112,7 @@ function DesktopSidebar({ pathname }: { pathname: string }) {
             >
               <item.icon size={14} strokeWidth={2.1} className={active ? "text-accent" : ""} />
               {item.label}
-              {item.href === "/" && chats.length ? (
+              {item.href === "/library" && chats.length ? (
                 <span className="ml-auto font-mono text-[10.5px] tabnums text-ink-3">
                   {chats.filter((c) => !c.archived).length}
                 </span>
@@ -127,7 +131,7 @@ function DesktopSidebar({ pathname }: { pathname: string }) {
             {collections.map((collection) => (
               <Link
                 key={collection.id}
-                href={`/?collection=${collection.id}`}
+                href={`/library?collection=${collection.id}`}
                 className="flex h-7 items-center gap-2 rounded-control px-2.5 text-[12.5px] text-ink-2 transition-colors hover:bg-hover hover:text-ink"
               >
                 <span
@@ -157,7 +161,7 @@ function DesktopSidebar({ pathname }: { pathname: string }) {
 
 function MobileNav({ pathname }: { pathname: string }) {
   const items = [
-    { href: "/", label: "Library", icon: Library, exact: true },
+    { href: "/library", label: "Library", icon: Library, exact: true },
     { href: "/search", label: "Search", icon: Search },
     { href: "/import", label: "Add", icon: Plus, primary: true },
     { href: "/study", label: "Study", icon: GraduationCap },

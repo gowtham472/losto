@@ -56,7 +56,7 @@ export function StudyHubView() {
                     .map((collection) => (
                       <Link
                         key={collection.id}
-                        href={`/?collection=${collection.id}`}
+                        href={`/library?collection=${collection.id}`}
                         className="flex flex-col gap-1 rounded-card bg-surface p-3 shadow-card transition-colors hover:bg-hover"
                       >
                         <span className="text-[13px] font-semibold tracking-[-0.015em] text-ink">

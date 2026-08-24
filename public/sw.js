@@ -11,6 +11,7 @@ const PAGE_CACHE = `${VERSION}-pages`;
  */
 const SHELL = [
   "/",
+  "/library",
   "/import",
   "/chat",
   "/study",

@@ -5,6 +5,7 @@
 User-agent: *
 Allow: /$
 Allow: /legal
+Disallow: /library
 Disallow: /api/
 Disallow: /chat
 Disallow: /study

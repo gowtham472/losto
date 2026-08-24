@@ -21,7 +21,7 @@ export default function manifest(): ManifestWithShareTarget {
     short_name: "Losto",
     description:
       "Save ChatGPT, Claude and Perplexity chats to your phone and read them with no signal.",
-    start_url: "/",
+    start_url: "/library",
     scope: "/",
     display: "standalone",
     display_override: ["standalone", "minimal-ui"],
@@ -36,6 +36,7 @@ export default function manifest(): ManifestWithShareTarget {
       { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
     shortcuts: [
+      { name: "Library", short_name: "Library", url: "/library" },
       { name: "Add a chat", short_name: "Add", url: "/import" },
       { name: "Search library", short_name: "Search", url: "/search" },
       { name: "Study mode", short_name: "Study", url: "/study" },
