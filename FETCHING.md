@@ -131,6 +131,34 @@ their own browser and copying it, which is access they plainly have.
 - Product names and marks belong to their owners. Losto is not affiliated with,
   endorsed by, or connected to any of them.
 
+## Passing a copy to someone else
+
+Losto can hand a saved chat to another phone in the same room - by the phone's
+own share sheet, or as a QR code. This is worth stating separately, because it
+is not the same act as keeping a personal copy, and the reasoning above does not
+stretch to cover it unexamined.
+
+What it is: one person giving one copy to one person standing next to them, of
+material both of them could have opened themselves. Device to device, over the
+phone's own radio or a camera. Nothing is uploaded, nothing is published, there
+is no server in the path and no copy is retained anywhere but on the two
+devices. It is a classmate handing over a photocopy, not a distribution channel.
+
+What keeps it there:
+
+- **Attribution travels.** The author, publication, date and original link are
+  part of the bundle. The receiver's copy shows the same credit line the
+  sender's does, and it cannot be dropped in transit.
+- **No reach beyond the room.** The transports are deliberately short-range and
+  one-to-one. There is no link to post, no upload, no group send.
+- **The receiver is told what they are taking**, including where it came from,
+  and nothing is written until they agree.
+
+What it is not, and must not become: a way to publish. If sharing ever grows a
+link, a feed, a public index or a many-recipient send, it stops being a private
+copy passed between two people and this section is wrong - rewrite it rather
+than stretching it.
+
 ## If a source objects
 
 Every source carries a `fetchable` flag in [`lib/sources.ts`](./lib/sources.ts).

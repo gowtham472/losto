@@ -229,6 +229,14 @@ export default function LegalPage() {
               stripped by accident, because it is part of what gets stored.
             </p>
             <p>
+              <strong className="font-semibold text-ink">Passing a chat to someone next to you</strong>{" "}
+              sends one copy to one person, device to device, over your phone&apos;s own radio or a
+              code on the screen. It does not go through us and it is not uploaded anywhere. The
+              credit line goes with it, and the person receiving it sees where it came from before
+              they keep it. Use it the way you would hand over a photocopy - not as a way to
+              publish someone else&apos;s work.
+            </p>
+            <p>
               If you own content that someone has saved and you believe it is being misused, write
               to {OPERATOR.email} and it will be looked into.
             </p>

@@ -19,6 +19,7 @@ Built by [DoodleByte Studio](https://doodlebytestudio.in), Chennai.
 | `/` | Public landing page |
 | `/library` | The app. PWA `start_url`, so an installed Losto opens straight here |
 | `/import` | Add a chat, by link or pasted text. Also the Android share target |
+| `/receive` | Take a chat from a phone next to you - scan a code, or open a `.losto` file |
 | `/chat?id=` | Reader, full-screen |
 | `/study` · `/study/session?id=` | Study hub and a running card session |
 | `/search` · `/collections` · `/settings` | Full-text search, subjects, settings |
@@ -108,12 +109,28 @@ Built by [DoodleByte Studio](https://doodlebytestudio.in), Chennai.
   space reveals, arrows move.
 - Finishes with a confidence score and a known/to-review split.
 
+**Sharing, with no internet**
+
+- **Send to a friend** in a chat's options packs it into one `.losto` file -
+  messages, pictures, tags and the credit line - and hands it to the phone's own
+  share sheet, so it goes by AirDrop, Quick Share or Bluetooth. None of those
+  need a connection, and nothing passes through a server.
+- **Or show a code.** The same bundle without its media becomes a QR code the
+  other phone scans on `/receive`. Anything past one screenful cycles as a loop
+  of frames; a missed frame comes back around. A fifteen-question chat gzips to
+  about 600 bytes, which is two frames.
+- **Seven digits on both screens.** The code is a hash of the bundle, so sender
+  and receiver see the same number when they are holding the same thing. It is
+  a check, not an address - see [Why there is no pairing code](#why-there-is-no-pairing-code).
+- Nothing is written until the receiver sees what they are getting and taps
+  keep. Duplicates are skipped.
+
 **Everything else**
 
 - **Full-text search** across every saved answer, with snippets, offline.
 - **Subjects** with colours and symbols, plus a starter set for common modules.
 - **Backup** - export the library as one JSON file, restore it anywhere.
-  Duplicates are skipped.
+  Duplicates are skipped. `/receive` reads a backup too, not just a bundle.
 - **Export a chat** as Markdown.
 - **Installable** to the home screen, with an offline page and an offline banner.
 
@@ -168,6 +185,40 @@ boxes and comment threads, then keeps:
 
 Every saved article opens with a credit line naming the author, the publication
 and the original link.
+
+## Passing a chat to someone next to you
+
+Two phones in the same room, neither with a connection, one of them holding the
+chat. `/receive` takes it across.
+
+### Why there is no pairing code
+
+A seven-digit code that *finds* the other device would need something to resolve
+it - and a page in a browser cannot be that something. It cannot listen on a
+socket, cannot advertise over Bluetooth, cannot answer a discovery request.
+Every product that pairs by code has a rendezvous server doing the introduction,
+which Losto does not have and could not reach with the internet off anyway.
+
+So the code does the one thing it honestly can: it is a hash of the bundle, and
+both sides display it. Matching numbers mean both phones are holding the same
+bytes. It verifies; it does not connect.
+
+### What carries the bytes
+
+| Route | Carries | Needs |
+| --- | --- | --- |
+| The phone's share sheet | Everything, pictures included | AirDrop, Quick Share, Bluetooth - no internet |
+| A QR code on screen | The words, not the pictures | A camera, and nothing else at all |
+
+The bundle is gzipped JSON with the media base64'd inside it, so a shared chat
+reads offline on arrival rather than showing broken pictures. Text compresses
+about seven times over, which is what makes the QR route practical: a chat of
+fifteen questions and answers comes to roughly 600 bytes, or two frames. Longer
+ones cycle as a loop until the far side has every piece, and above 60 KB Losto
+says so and sends you to the file instead.
+
+Receiving is deliberately two steps. Losto shows the code, the titles and
+whether media came with it, and writes nothing until you agree.
 
 ## Media
 
@@ -300,7 +351,7 @@ After deploying, check `/legal` shows no warning banner, `/robots.txt` returns
 3. **Choose a licence** and add a `LICENSE` file. Every dependency is permissive
    (MIT, BSD, ISC, Apache-2.0, 0BSD, CC-BY-4.0) with no copyleft, so the choice
    is unconstrained.
-4. **Keep `THIRD-PARTY-NOTICES.md` shipped and current.** It attributes 142
+4. **Keep `THIRD-PARTY-NOTICES.md` shipped and current.** It attributes 144
    packages plus four SIL Open Font License typefaces, which those licences
    require. Regenerate whenever dependencies change.
 5. **Point `LOSTO_BOT_URL` at a real page.** It is the address every fetched

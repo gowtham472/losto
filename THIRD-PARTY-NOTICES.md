@@ -4,7 +4,7 @@ Losto bundles the open-source work listed below. Each component remains under
 its own licence and the copyright of its authors. This file is the attribution
 those licences require; it ships with the application.
 
-_Generated from the dependency tree on 2026-08-24._
+_Generated from the dependency tree on 2026-08-25._
 
 ## Fonts
 
@@ -22,16 +22,17 @@ The full OFL text is at <https://openfontlicense.org>.
 
 ## Software
 
-142 packages, grouped by licence.
+144 packages, grouped by licence.
 
 ### 0BSD (1)
 
 - **tslib** 2.8.1 - Microsoft Corp. - <https://www.typescriptlang.org/>
 
-### Apache-2.0 (2)
+### Apache-2.0 (3)
 
 - **@swc/helpers** 0.5.23 - 강동윤 <kdy1997.dev@gmail.com> - <https://swc.rs>
 - **baseline-browser-mapping** 2.11.17 - <https://github.com/web-platform-dx/baseline-browser-mapping>
+- **jsqr** 1.4.0 - Cosmo Wolfe - <https://github.com/cozmo/jsQR>
 
 ### BSD-2-Clause (2)
 
@@ -54,7 +55,7 @@ The full OFL text is at <https://openfontlicense.org>.
 - **lucide-react** 1.33.0 - Eric Fennis - <https://lucide.dev>
 - **picocolors** 1.1.1 - Alexey Raspopov
 
-### MIT (130)
+### MIT (131)
 
 - **@next/env** 16.3.2 - Next.js Team <support@vercel.com> - <https://github.com/vercel/next.js>
 - **@types/debug** 4.1.13 - <https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/debug>
@@ -154,6 +155,7 @@ The full OFL text is at <https://openfontlicense.org>.
 - **parse5** 7.3.0 - Ivan Nikulin <ifaaan@gmail.com> (https://github.com/inikulin) - <https://parse5.js.org>
 - **postcss** 8.5.23 - Andrey Sitnik <andrey@sitnik.es> - <https://postcss.org/>
 - **property-information** 7.2.0 - Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)
+- **qrcode-generator** 2.0.4 - Kazuhiko Arase - <https://github.com/kazuhikoarase/qrcode-generator>
 - **react** 19.2.8 - <https://react.dev/>
 - **react-dom** 19.2.8 - <https://react.dev/>
 - **react-markdown** 10.1.0 - Espen Hovlandsdal <espen@hovlandsdal.com>

@@ -9,6 +9,7 @@ import {
   Link2,
   Loader2,
   Sparkles,
+  Users,
   Type,
   WifiOff,
   X,
@@ -734,6 +735,16 @@ function HowItWorks() {
           On Android you can also share a link straight from an assistant app or your browser into
           Losto once it is
           installed to your home screen. <Link href="/settings" className="underline">Install it here.</Link>
+        </span>
+      </p>
+      <p className="mt-1.5 flex items-start gap-1.5 px-1 text-[11.5px] leading-relaxed text-ink-3">
+        <Users size={12} strokeWidth={2.2} className="mt-px shrink-0" />
+        <span>
+          Someone next to you already has the chat?{" "}
+          <Link href="/receive" className="underline">
+            Take it from their phone
+          </Link>{" "}
+          - no internet needed.
         </span>
       </p>
     </section>

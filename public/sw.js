@@ -1,6 +1,6 @@
 /* Losto service worker - makes the whole app usable with no connection. */
 
-const VERSION = "losto-v1";
+const VERSION = "losto-v2";
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const PAGE_CACHE = `${VERSION}-pages`;
@@ -13,6 +13,7 @@ const SHELL = [
   "/",
   "/library",
   "/import",
+  "/receive",
   "/chat",
   "/study",
   "/study/session",

@@ -7,6 +7,7 @@ import {
   Image as ImageIcon,
   Link2,
   Loader2,
+  Send,
   Trash2,
 } from "lucide-react";
 import { useState } from "react";
@@ -15,6 +16,7 @@ import { COLLECTION_COLORS, sourceInfo } from "@/lib/sources";
 import { useLibrary } from "@/lib/store";
 import type { ChatMeta } from "@/lib/types";
 import { cn, copyText, downloadFile, slugify } from "@/lib/utils";
+import { ShareSheet } from "./ShareSheet";
 import { Button, Field, Label } from "./ui/primitives";
 import { Confirm, Sheet } from "./ui/sheet";
 import { useToast } from "./ui/toast";
@@ -48,6 +50,7 @@ function ChatActionsSheet({
   const [tags, setTags] = useState(chat.tags.join(", "));
   const [confirming, setConfirming] = useState(false);
   const [refetching, setRefetching] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   const commit = async () => {
     const nextTags = tags
@@ -72,6 +75,12 @@ function ChatActionsSheet({
     downloadFile(`${slugify(chat.title)}.md`, doc, "text/markdown");
     toast.success("Markdown file saved");
   };
+
+  // One dialog at a time - the share sheet replaces this one rather than
+  // stacking on top of it.
+  if (sharing) {
+    return <ShareSheet chat={chat} open onClose={onClose} />;
+  }
 
   return (
     <>
@@ -170,6 +179,11 @@ function ChatActionsSheet({
                   setRefetching(false);
                 }
               }}
+            />
+            <Row
+              icon={<Send size={14} strokeWidth={2.1} />}
+              label="Send to a friend"
+              onClick={() => setSharing(true)}
             />
             <Row
               icon={<Download size={14} strokeWidth={2.1} />}

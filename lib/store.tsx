@@ -11,6 +11,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { type DownloadOutcome, type DownloadProgress, downloadAssets } from "./assets";
+import { type Bundle, asBundle, buildBundle, storeBundleAssets } from "./bundle";
 import { buildChecklist } from "./checklist";
 import * as db from "./db";
 import { originIconAsset } from "./media";
@@ -105,8 +106,17 @@ interface LibraryValue {
   updateCollection: (id: string, patch: Partial<Collection>) => Promise<void>;
   removeCollection: (id: string) => Promise<void>;
   exportBackup: () => Promise<BackupFile>;
-  importBackup: (file: BackupFile) => Promise<{ chats: number; collections: number }>;
+  importBackup: (file: BackupFile) => Promise<ImportCount>;
+  /** Packs chats for handing to another device. */
+  exportChats: (ids: string[], options?: { media?: boolean }) => Promise<Bundle>;
+  importBundle: (bundle: Bundle) => Promise<ImportCount>;
   wipe: () => Promise<void>;
+}
+
+interface ImportCount {
+  chats: number;
+  collections: number;
+  media: number;
 }
 
 const LibraryContext = createContext<LibraryValue | null>(null);
@@ -428,17 +438,14 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const importBackup = useCallback<LibraryValue["importBackup"]>(async (file) => {
-    if (file?.app !== "losto" || !Array.isArray(file.chats)) {
-      throw new Error("That file is not a Losto backup.");
-    }
+  const importBundle = useCallback<LibraryValue["importBundle"]>(async (bundle) => {
     const existing = await db.getAllChats();
     const known = new Set(existing.map((c) => c.id));
     const knownUrls = new Set(existing.map((c) => `${c.source}|${c.sourceUrl}`));
 
     const metas: ChatMeta[] = [];
     const bodies: ChatBody[] = [];
-    for (const chat of file.chats) {
+    for (const chat of bundle.chats) {
       const { messages = [], ...meta } = chat;
       // Re-key anything that would collide, and skip true duplicates.
       if (knownUrls.has(`${meta.source}|${meta.sourceUrl}`) && meta.sourceUrl) continue;
@@ -450,15 +457,49 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
 
     const currentCollections = await db.getCollections();
     const collectionIds = new Set(currentCollections.map((c) => c.id));
-    const newCollections = (file.collections ?? []).filter((c) => !collectionIds.has(c.id));
+    const newCollections = (bundle.collections ?? []).filter((c) => !collectionIds.has(c.id));
 
     if (newCollections.length) await db.putCollections(newCollections);
     if (metas.length) await db.putChats(metas, bodies);
 
+    // Pictures go in before the chats, so nothing is ever readable with holes
+    // in it - the whole reason a bundle carries its media at all.
+    const media = await storeBundleAssets(bundle);
+
     setChats(await db.getAllChats());
     setCollections((await db.getCollections()).sort((a, b) => a.order - b.order));
-    return { chats: metas.length, collections: newCollections.length };
+    return { chats: metas.length, collections: newCollections.length, media };
   }, []);
+
+  const importBackup = useCallback<LibraryValue["importBackup"]>(
+    (file) => importBundle(asBundle(file)),
+    [importBundle],
+  );
+
+  const exportChats = useCallback<LibraryValue["exportChats"]>(
+    async (ids, options = {}) => {
+      const wanted = new Set(ids);
+      const metas = (await db.getAllChats()).filter((c) => wanted.has(c.id));
+      const chats = await Promise.all(
+        metas.map(async (meta) => ({
+          ...meta,
+          messages: bodyCache.current.get(meta.id) ?? (await db.getBody(meta.id))?.messages ?? [],
+        })),
+      );
+      // Only the subjects these chats actually sit in, so sharing one chat does
+      // not rearrange somebody else's library.
+      const used = new Set(metas.map((m) => m.collectionId).filter(Boolean));
+      const collections = (await db.getCollections()).filter((c) => used.has(c.id));
+
+      return buildBundle({
+        chats,
+        collections,
+        withMedia: options.media !== false,
+        maxAssetBytes: settingsRef.current.maxAssetMB * 1024 * 1024,
+      });
+    },
+    [],
+  );
 
   /*
    * Items saved before icons existed, or whose icon download failed, show a
@@ -545,6 +586,8 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
       removeCollection,
       exportBackup,
       importBackup,
+      exportChats,
+      importBundle,
       wipe,
     }),
     [
@@ -567,6 +610,8 @@ export function LibraryProvider({ children }: { children: React.ReactNode }) {
       removeCollection,
       exportBackup,
       importBackup,
+      exportChats,
+      importBundle,
       wipe,
     ],
   );
