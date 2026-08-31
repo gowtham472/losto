@@ -532,6 +532,7 @@ export function ReaderView() {
 
           <Row label="Typeface">
             <Segmented
+              size="sm"
               value={settings.readerTypeface}
               onChange={(v) => setSetting("readerTypeface", v)}
               options={[
@@ -544,6 +545,7 @@ export function ReaderView() {
 
           <Row label="Layout">
             <Segmented
+              size="sm"
               value={settings.readerLayout}
               onChange={(v) => setSetting("readerLayout", v)}
               options={[
@@ -555,6 +557,7 @@ export function ReaderView() {
 
           <Row label="Show reasoning">
             <Segmented
+              size="sm"
               value={settings.showThinking ? "on" : "off"}
               onChange={(v) => setSetting("showThinking", v === "on")}
               options={[

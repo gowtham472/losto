@@ -46,13 +46,12 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
   },
   formatDetection: { telephone: false },
-  icons: {
-    icon: [
-      { url: "/icons/icon.svg", type: "image/svg+xml" },
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-    ],
-    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
-  },
+  /*
+   * No `icons` block on purpose. app/favicon.ico, app/icon.svg, app/icon1.png
+   * and app/apple-icon.png are picked up by the App Router's file convention
+   * and the tags are generated from those. Declaring them here as well would
+   * mean two sources of truth for the same image.
+   */
 };
 
 export const viewport: Viewport = {

@@ -30,10 +30,11 @@ export default function manifest(): ManifestWithShareTarget {
     theme_color: "#fbfbfc",
     categories: ["education", "productivity", "books"],
     icons: [
-      { src: "/icons/icon.svg", sizes: "any", type: "image/svg+xml" },
-      { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/web-app-manifest-192x192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/web-app-manifest-512x512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      // The mark is drawn well inside its own margin, so the same file survives
+      // being cropped to whatever shape a launcher wants.
+      { src: "/web-app-manifest-512x512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
     shortcuts: [
       { name: "Library", short_name: "Library", url: "/library" },

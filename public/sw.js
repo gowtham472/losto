@@ -1,6 +1,6 @@
 /* Losto service worker - makes the whole app usable with no connection. */
 
-const VERSION = "losto-v3";
+const VERSION = "losto-v4";
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const PAGE_CACHE = `${VERSION}-pages`;
@@ -23,9 +23,8 @@ const SHELL = [
   "/legal",
   "/offline",
   "/manifest.webmanifest",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  "/icons/icon.svg",
+  "/web-app-manifest-192x192.png",
+  "/web-app-manifest-512x512.png",
   // Source marks. Cache-first would only hold one after it had been seen, and
   // a library installed on the train should show its icons on the first open.
   "/icons/chatgpt-icon.webp",

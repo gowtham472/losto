@@ -127,6 +127,7 @@ export function LibraryView() {
           <>
             <SortMenu value={settings.sort} onChange={(v) => setSetting("sort", v)} />
             <Segmented
+              size="sm"
               value={settings.view}
               onChange={(v) => setSetting("view", v)}
               options={[
@@ -241,7 +242,7 @@ export function LibraryView() {
                 <Link
                   key={chat.id}
                   href={`/chat?id=${chat.id}`}
-                  className="group flex w-[232px] shrink-0 flex-col gap-2.5 rounded-card bg-surface p-3 shadow-card transition-colors hover:bg-hover"
+                  className="group flex w-[240px] shrink-0 flex-col gap-3 rounded-card bg-surface p-4 shadow-card transition-colors hover:bg-hover"
                 >
                   <div className="flex items-center gap-2">
                     <SourceMark

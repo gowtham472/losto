@@ -105,6 +105,7 @@ export function SettingsView() {
           <Card className="divide-y divide-line">
             <Row label="Theme">
               <Segmented
+              size="sm"
                 value={settings.theme}
                 onChange={(v) => setSetting("theme", v)}
                 options={[
@@ -116,6 +117,7 @@ export function SettingsView() {
             </Row>
             <Row label="Library layout">
               <Segmented
+              size="sm"
                 value={settings.view}
                 onChange={(v) => setSetting("view", v)}
                 options={[
@@ -151,6 +153,7 @@ export function SettingsView() {
             </Row>
             <Row label="Typeface">
               <Segmented
+              size="sm"
                 value={settings.readerTypeface}
                 onChange={(v) => setSetting("readerTypeface", v)}
                 options={[
@@ -162,6 +165,7 @@ export function SettingsView() {
             </Row>
             <Row label="Layout" hint="Chat keeps the bubbles; document reads like notes.">
               <Segmented
+              size="sm"
                 value={settings.readerLayout}
                 onChange={(v) => setSetting("readerLayout", v)}
                 options={[
@@ -172,6 +176,7 @@ export function SettingsView() {
             </Row>
             <Row label="Reasoning traces" hint="Show the model's thinking when a chat has it.">
               <Segmented
+              size="sm"
                 value={settings.showThinking ? "on" : "off"}
                 onChange={(v) => setSetting("showThinking", v === "on")}
                 options={[
@@ -192,6 +197,7 @@ export function SettingsView() {
               hint="Media links from the assistants expire within hours, so the files are copied onto this device as each chat is saved."
             >
               <Segmented
+              size="sm"
                 value={settings.media}
                 onChange={(v) => setSetting("media", v)}
                 options={[

@@ -68,7 +68,7 @@ export function Chip({
     <button
       type="button"
       className={cn(
-        "inline-flex h-8 shrink-0 select-none items-center gap-1.5 rounded-full px-3",
+        "inline-flex h-9 shrink-0 select-none items-center gap-1.5 rounded-full px-3.5",
         "text-[12.5px] font-medium transition-[background-color,box-shadow,color] duration-150",
         active
           ? "bg-ink text-page shadow-btn"
@@ -176,21 +176,38 @@ export function Label({ children, className }: { children: ReactNode; className?
 /* Segmented control                                                          */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * "sm" is for a control sitting in a labelled settings row, where the label
+ * beside it carries the height. Everywhere else the segmented control *is* the
+ * control, and needs a proper touch target on a phone.
+ */
+const SEGMENT_SIZES = {
+  sm: { pad: "p-0.5", button: "h-7 gap-1.5 px-2.5 text-[12.5px]" },
+  md: { pad: "p-1", button: "h-9 gap-2 px-3.5 text-[13px]" },
+} as const;
+
 export function Segmented<T extends string>({
   options,
   value,
   onChange,
+  size = "md",
   className,
 }: {
   options: { value: T; label: ReactNode; title?: string }[];
   value: T;
   onChange: (value: T) => void;
+  size?: keyof typeof SEGMENT_SIZES;
   className?: string;
 }) {
+  const dims = SEGMENT_SIZES[size];
   return (
     <div
       role="radiogroup"
-      className={cn("inline-flex items-center gap-0.5 rounded-control bg-inset p-0.5 shadow-hairline", className)}
+      className={cn(
+        "inline-flex items-center gap-0.5 rounded-control bg-inset shadow-hairline",
+        dims.pad,
+        className,
+      )}
     >
       {options.map((option) => {
         const active = option.value === value;
@@ -203,8 +220,9 @@ export function Segmented<T extends string>({
             title={option.title}
             onClick={() => onChange(option.value)}
             className={cn(
-              "inline-flex h-7 items-center justify-center gap-1.5 rounded-[6px] px-2.5",
-              "text-[12.5px] font-medium transition-[background-color,box-shadow,color] duration-150",
+              "inline-flex items-center justify-center rounded-[6px]",
+              dims.button,
+              "font-medium transition-[background-color,box-shadow,color] duration-150",
               active
                 ? "bg-surface text-ink shadow-btn"
                 : "text-ink-3 hover:text-ink-2",
