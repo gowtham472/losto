@@ -181,11 +181,14 @@ export function Label({ children, className }: { children: ReactNode; className?
  * beside it carries the height. Everywhere else the segmented control *is* the
  * control, and needs a proper touch target on a phone.
  */
+/*
+ * The track hugs the pill. Room goes inside the buttons, where it makes them
+ * easier to hit; padding on the track only pushes the pill away from its own
+ * edge and leaves the whole control looking loose.
+ */
 const SEGMENT_SIZES = {
   sm: { pad: "p-0.5", button: "h-7 gap-1.5 px-2.5 text-[12.5px]" },
-  // 6px, not 4: the selected pill carries a ring and a drop shadow, and at 4px
-  // they sit hard against the track edge and read as cut off.
-  md: { pad: "p-1.5", button: "h-9 gap-2 px-3.5 text-[13px]" },
+  md: { pad: "p-0.5", button: "h-9 gap-2 px-3.5 text-[13px]" },
 } as const;
 
 export function Segmented<T extends string>({
