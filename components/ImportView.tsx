@@ -316,7 +316,13 @@ export function ImportView() {
                 onChange={(e) => setInput(e.target.value)}
                 rows={3}
                 spellCheck={false}
-                placeholder={"https://chatgpt.com/share/…\n\nPaste one link, or several at once."}
+                /*
+                 * One line. The url alone wraps to two on a narrow phone, and a
+                 * three-line placeholder in a three-row box then loses its last
+                 * line to the bottom edge - sliced through the middle of the text.
+                 * The "one link or several" hint sits under the field instead.
+                 */
+                placeholder="https://chatgpt.com/share/…"
                 className="pr-11 font-mono text-[12.5px]"
                 aria-label="Share links"
               />
@@ -344,7 +350,8 @@ export function ImportView() {
                 </span>
               ) : (
                 <span className="text-[12px] text-ink-3">
-                  Works with {FETCHED.map((s) => SOURCES[s].label).join(", ")}, blogs and docs. Anything Losto
+                  One link or several. Works with{" "}
+                  {FETCHED.map((s) => SOURCES[s].label).join(", ")}, blogs and docs - anything Losto
                   cannot read, it will show you how to paste.
                 </span>
               )}

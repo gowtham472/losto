@@ -246,7 +246,7 @@ export function PageHeader({
             {title}
           </h1>
           {subtitle ? (
-            <p className="mt-1.5 truncate text-[12.5px] text-ink-2">{subtitle}</p>
+            <p className="mt-1.5 text-[12.5px] leading-snug text-ink-2">{subtitle}</p>
           ) : null}
         </div>
         {actions ? <div className="flex shrink-0 items-center gap-1.5">{actions}</div> : null}

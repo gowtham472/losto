@@ -182,13 +182,15 @@ export function Label({ children, className }: { children: ReactNode; className?
  * control, and needs a proper touch target on a phone.
  */
 /*
- * The track hugs the pill. Room goes inside the buttons, where it makes them
- * easier to hit; padding on the track only pushes the pill away from its own
- * edge and leaves the whole control looking loose.
+ * The gap between pill and track has to clear both of their rings. The track
+ * draws a 1px hairline and the selected pill draws its own; at two pixels apart
+ * the two read as a single thick edge and the pill looks sheared off against
+ * it. Four separates them cleanly - and the button gives back the same four, so
+ * the control is no taller for it.
  */
 const SEGMENT_SIZES = {
   sm: { pad: "p-0.5", button: "h-7 gap-1.5 px-2.5 text-[12.5px]" },
-  md: { pad: "p-0.5", button: "h-9 gap-2 px-3.5 text-[13px]" },
+  md: { pad: "p-1", button: "h-8 gap-2 px-3.5 text-[13px]" },
 } as const;
 
 export function Segmented<T extends string>({
