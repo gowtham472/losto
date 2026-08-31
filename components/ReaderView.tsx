@@ -282,7 +282,12 @@ export function ReaderView() {
 
           {chat ? (
             <div className="flex min-w-0 flex-1 items-center gap-2">
-              <SourceMark source={chat.source} faviconId={chat.faviconAssetId} size="sm" />
+              <SourceMark
+                source={chat.source}
+                sourceUrl={chat.sourceUrl}
+                faviconId={chat.faviconAssetId}
+                size="sm"
+              />
               <p className="truncate text-[12.5px] font-semibold tracking-[-0.015em] text-ink">
                 {chat.title}
               </p>
@@ -594,7 +599,12 @@ function ReaderTitle({ chat, onFavorite }: { chat: ChatMeta; onFavorite: () => v
       </h1>
       <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11.5px] text-ink-2">
         <span className="flex items-center gap-1.5">
-          <SourceMark source={chat.source} faviconId={chat.faviconAssetId} size="sm" />
+          <SourceMark
+                source={chat.source}
+                sourceUrl={chat.sourceUrl}
+                faviconId={chat.faviconAssetId}
+                size="sm"
+              />
           {chat.model ?? undefined}
         </span>
         <Dot />

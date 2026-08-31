@@ -20,6 +20,18 @@ Open Font License requires this notice and forbids selling the fonts on their ow
 
 The full OFL text is at <https://openfontlicense.org>.
 
+## Trademarks
+
+Losto includes the logos of ChatGPT (OpenAI), Claude (Anthropic), Gemini
+(Google) and Wikipedia (Wikimedia Foundation) in `public/icons/`. They are shown
+only to identify where a saved item came from, reproduced unaltered and never as
+part of Losto's own branding.
+
+These marks belong to their owners. Their inclusion is identification, not a
+claim of affiliation, endorsement or sponsorship - Losto has none. A rights
+holder who would rather their mark were not included should write to the address
+on `/legal` and it will be removed.
+
 ## Software
 
 144 packages, grouped by licence.

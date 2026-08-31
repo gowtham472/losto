@@ -148,7 +148,12 @@ export function SearchView() {
                 className="block rounded-card bg-surface p-3 shadow-card transition-colors hover:bg-hover"
               >
                 <div className="flex items-center gap-2.5">
-                  <SourceMark source={hit.chat.source} faviconId={hit.chat.faviconAssetId} size="sm" />
+                  <SourceMark
+                    source={hit.chat.source}
+                    sourceUrl={hit.chat.sourceUrl}
+                    faviconId={hit.chat.faviconAssetId}
+                    size="sm"
+                  />
                   <p className="min-w-0 flex-1 truncate text-[13px] font-semibold tracking-[-0.015em] text-ink">
                     <Highlight text={hit.chat.title} query={debounced} />
                   </p>

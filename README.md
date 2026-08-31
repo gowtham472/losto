@@ -42,6 +42,8 @@ Built by [DoodleByte Studio](https://doodlebytestudio.in), Chennai.
 **Importing**
 
 - One link or ten at once, with a live preview before anything is saved.
+- **Export file** - drop in `conversations.json` from ChatGPT's or Claude's own
+  export and the whole history lands at once, parsed on the device.
 - **Paste text** for anything that cannot be fetched. `You said:` /
   `<assistant> said:` markers are split back into questions and answers. When a
   link cannot be read, Losto says why, shows the copy steps for that assistant
@@ -138,13 +140,30 @@ Built by [DoodleByte Studio](https://doodlebytestudio.in), Chennai.
 
 | Source | How it is read | Status |
 | --- | --- | --- |
+| **Your own export file** | `conversations.json` from ChatGPT or Claude, read in the browser | Whole history |
+| Pasted text | Split back into questions and answers, media and all | Always available |
 | ChatGPT | The public `/share/<id>` page, decoding its React Router stream payload | Fetched |
 | Blogs, docs, Medium | Scored article extraction with metadata and media | Fetched |
-| Claude | `claude.ai/share/<id>`, the one path its robots.txt allows | Tried, usually falls back |
-| Perplexity | The public thread endpoint its robots.txt allows | Tried, often falls back |
-| Gemini, Grok, DeepSeek, Copilot, Le Chat | Article extraction against the share page | Tried, usually falls back |
-| Pasted text | Split back into questions and answers, media and all | Always available |
+| Claude | `claude.ai/share/<id>`, the one path its robots.txt allows | Tried, falls back |
+| Gemini, Grok, DeepSeek, Copilot, Le Chat | Article extraction against the share page | Tried, falls back |
+| Perplexity | Not fetched. Their terms address automated extraction directly | Paste, or export |
 | ChatGPT generated images | Not published by OpenAI - see [Media](#media) | Add the file yourself |
+
+### Your own export is the best route
+
+Every assistant will hand you your own data if you ask. That file is the import
+with nothing to weigh up - you asked your provider, they gave it to you, and
+Losto reads it off the device. No fetching, no share link, no endpoint, no terms
+to interpret, and it brings a whole history rather than one conversation.
+
+- **ChatGPT** - Settings → Data controls → Export data
+- **Claude** - Settings → Privacy → Export data
+
+Unzip what arrives and pick `conversations.json` on **Add a chat → Export file**.
+It is parsed in the browser by [`lib/exports.ts`](./lib/exports.ts), which
+imports nothing from the fetching code: the file never reaches a server, and the
+whole thing works offline. Branching ChatGPT threads follow the branch you kept,
+and hidden scaffolding turns are dropped.
 
 ### Try, then fall back
 
@@ -154,6 +173,11 @@ construction: ChatGPT ships the conversation inside the share page, so it can be
 read. Claude and most other assistants assemble the chat in your browser after
 load, so the page a server receives is an empty shell - there is genuinely
 nothing there to save.
+
+Measured rather than assumed. A Claude share page is 104 KB of HTML with no
+`chat_messages` anywhere in it; a Gemini share page is 833 KB whose visible text
+is the fifty-six characters of its sign-in chrome. Both are shells. For those,
+the export file above brings the whole history across instead.
 
 When a fetch comes back empty, blocked or unsupported, Losto says which of those
 happened, shows the copy steps for that assistant, and puts the cursor in the
@@ -257,15 +281,31 @@ attach a screenshot or a photo of handwritten notes.
 
 ### Source icons
 
-Saved items carry the real icon of the site they came from, read from the page's
-own `<link rel="icon">` (largest declared size wins, `apple-touch-icon`
-preferred) and stored alongside the chat so it shows offline.
+Three things can fill the tile, in that order.
 
-Two deliberate choices. No third-party favicon service is used - that would hand
-someone else a log of every site a reader saves. And nothing is hand-traced:
-each publisher's own icon stays accurate and survives a rebrand, without
-shipping redrawn trademarks. A tinted monogram stands in until the icon lands,
-or if a site serves none.
+1. **A mark bundled with the app**, for ChatGPT, Claude, Gemini and Wikipedia.
+   These are in `public/icons/` and mapped in [`lib/logos.ts`](./lib/logos.ts) -
+   by source for the assistants, by hostname for Wikipedia. They are precached
+   by the service worker, so they are on screen from the first frame and with no
+   connection.
+2. **The icon fetched from the site itself**, read from the page's own
+   `<link rel="icon">` (largest declared size wins, `apple-touch-icon`
+   preferred) and stored alongside the chat. This covers every blog without
+   bundling anything and stays right through a rebrand.
+3. **A tinted monogram**, when a site serves no icon and none ships with the
+   app - Grok and DeepSeek among them.
+
+No third-party favicon service is used at any point: that would hand someone
+else a log of every site a reader saves.
+
+The bundled marks sit on a white tile rather than the surface colour. They are
+dark shapes on transparent backgrounds, and on a dark tile in dark mode they
+would simply disappear.
+
+The bundled files are the providers' own trademarks, included to say where a
+saved item came from. They are not redrawn, and they carry no suggestion of
+affiliation - see [`/legal`](./app/legal/page.tsx) and
+[`THIRD-PARTY-NOTICES.md`](./THIRD-PARTY-NOTICES.md).
 
 ## Being a good citizen
 
@@ -292,6 +332,13 @@ rather than a scraper:
 - **It rate-limits itself**: 30 extractions and 300 media files a minute per
   caller, and backs off when a host answers `429`.
 - **It keeps attribution attached** to every saved article and chat.
+- **It never asks for an account.** Losto has no field for a provider password,
+  never reads a cookie, token or browser profile, and cannot see anything that
+  needs a login. Nothing in it can reach a private conversation history - the
+  only ways in are your own export file, your own paste, and a link you give it.
+- **It uses no private endpoints.** Only the public share page a provider serves
+  to anyone. Internal file APIs and undocumented REST endpoints were removed in
+  favour of saying plainly when something cannot be read.
 
 The full reasoning - robots.txt versus terms of service versus copyright, what
 Losto claims and what it does not, and the known risks - is in
@@ -317,6 +364,7 @@ rebuild.
 | `LOSTO_USER_AGENT` | the honest agent | Overrides the agent entirely |
 | `LOSTO_STRICT_UA` | unset | `1` disables the browser retry, for pages and media alike |
 | `LOSTO_ASSET_HOSTS` | unset | Comma-separated allow list for the media proxy |
+| `NODE_OPTIONS` | unset | Recommended: `--max-http-header-size=65536`. Node rejects responses whose headers exceed 16 KB, and some large sites - Google among them - send more. Without it those pages cannot be read at all |
 
 ## Running it
 

@@ -25,6 +25,44 @@ reading list, and the read-later tools that have operated commercially for
 fifteen years. The user ends up with a copy of something they were already
 shown.
 
+## The line Losto does not cross
+
+Stated first, because it is the part that matters most and the part a reader
+should be able to check.
+
+Losto has **no way to reach a private conversation history**, and this is
+structural rather than a promise. There is no field for a provider password, no
+code that reads a cookie, token or browser profile, no browser automation, no
+dependency capable of driving a logged-in session, and no use of a provider's
+internal APIs. The only things it can read are a file you already have, text you
+paste, and a page a provider serves to anyone who asks.
+
+Three things were removed once it became clear they crossed that line:
+
+- **OpenAI's internal file endpoints** (`/backend-api/…`, `/public-api/…`,
+  `/backend-anon/…`), which Losto used to try to resolve generated images.
+  Undocumented, covered by chatgpt.com's catch-all `Disallow: /`, and they
+  refuse an unauthenticated caller in any case.
+- **Session-cookie capture and replay.** The page fetcher kept the cookies a
+  site handed back and sent them on follow-up requests. They were an anonymous
+  server's own cookies, never a reader's, but holding a consumer AI site's
+  session is not something a reading tool should be doing at all.
+- **Perplexity's `/rest/thread/` endpoint.** Undocumented, and their terms speak
+  to automated extraction directly. Perplexity is now `fetchable: false`.
+
+None of the three worked. Every one of them was pure exposure.
+
+## Prefer the file over the fetch
+
+The best import is the one with nothing to argue about: a provider's own export,
+which the reader requests from the provider and Losto reads off the device. No
+fetching, no share link, no endpoint, no terms to weigh - and it carries a whole
+history rather than one conversation. ChatGPT and Claude both offer one, and
+Losto reads them in the browser without a server involved.
+
+Everything below concerns the narrower case where a reader pastes a public link
+instead.
+
 ## The four layers, and where we stand
 
 ### 1. Criminal law

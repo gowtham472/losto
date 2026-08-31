@@ -1,6 +1,6 @@
 /* Losto service worker - makes the whole app usable with no connection. */
 
-const VERSION = "losto-v2";
+const VERSION = "losto-v3";
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const PAGE_CACHE = `${VERSION}-pages`;
@@ -26,6 +26,12 @@ const SHELL = [
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/icon.svg",
+  // Source marks. Cache-first would only hold one after it had been seen, and
+  // a library installed on the train should show its icons on the first open.
+  "/icons/chatgpt-icon.webp",
+  "/icons/claude-ai-icon.webp",
+  "/icons/google-gemini-icon.webp",
+  "/icons/wikipedia-icon.png",
 ];
 
 self.addEventListener("install", (event) => {

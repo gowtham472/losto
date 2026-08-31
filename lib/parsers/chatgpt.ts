@@ -2,9 +2,8 @@ import { appendAssets, kindForUrl, makeAsset } from "../media";
 import type { Asset, ChatMessage, ExtractResult, Role } from "../types";
 import { uid } from "../utils";
 import { collectEmbeddedJson, findNodes, siteIcon } from "./html";
-import { checkUrl } from "./robots";
 import { decodeReactRouterPage } from "./turbostream";
-import { BROWSER_UA, ExtractProblem, fetchPage, statusProblem } from "./http";
+import { ExtractProblem, fetchPage, statusProblem } from "./http";
 
 /** `/share/<uuid>`, `/share/e/<uuid>` and the legacy chat.openai.com form. */
 export function shareId(url: string): string | null {
@@ -38,7 +37,7 @@ export async function parseChatGpt(url: string): Promise<ExtractResult> {
 
     const [node] = findNodes(routed, isConversation, 1);
     if (node) {
-      const result = await fromPayload(node, url, id, page.cookies);
+      const result = fromPayload(node, url);
       if (result) {
         return { ...result, strategy: "chatgpt:share-page", favicon: siteIcon(page.body, page.finalUrl) };
       }
@@ -49,7 +48,7 @@ export async function parseChatGpt(url: string): Promise<ExtractResult> {
   for (const blob of collectEmbeddedJson(page.body)) {
     const [node] = findNodes(blob, isConversation, 1);
     if (node) {
-      const result = await fromPayload(node, url, id, page.cookies);
+      const result = fromPayload(node, url);
       if (result) {
         return { ...result, strategy: "chatgpt:embedded", favicon: siteIcon(page.body, page.finalUrl) };
       }
@@ -122,17 +121,14 @@ interface GptMessage {
   metadata?: Record<string, unknown>;
 }
 
-async function fromPayload(
+function fromPayload(
   payload: Record<string, unknown>,
   sourceUrl: string,
-  share: string,
-  cookies?: string,
-): Promise<Omit<ExtractResult, "strategy"> | null> {
+): Omit<ExtractResult, "strategy"> | null {
   const nodes = orderedNodes(payload);
   if (!nodes.length) return null;
 
   const messages: ChatMessage[] = [];
-  const resolver = createResolver(share, cookies);
   let pendingThinking: string[] = [];
   let model: string | undefined;
 
@@ -175,7 +171,7 @@ async function fromPayload(
     const { text: rawText, media } = readContent(msg.content ?? {});
     const text = cleanText(rawText, meta);
     const raw = [...media, ...readAttachments(meta)];
-    const assets = await resolver(raw);
+    const assets = toAssets(raw);
 
     // A message can be nothing but a picture, so media alone is worth keeping.
     if (!text.trim() && !assets.length) continue;
@@ -210,129 +206,52 @@ async function fromPayload(
 /* Asset pointers                                                             */
 /* -------------------------------------------------------------------------- */
 
-const POINTER_TIMEOUT_MS = 8_000;
 
 /**
- * Turns `file-service://file-…` pointers into real assets.
+ * Turns the media in a message into assets.
  *
- * OpenAI does not document a public endpoint for the media inside a shared
- * chat, so each candidate is tried and verified. Once one works the winner is
- * reused; once they have all failed the rest are marked unavailable rather than
- * re-probing every image.
+ * A picture the payload gives a real URL for is kept. A `file-service://`
+ * pointer is not: the only endpoints that would resolve one are OpenAI's
+ * internal file APIs, which are undocumented, sit under chatgpt.com's catch-all
+ * `Disallow: /`, and refuse an unauthenticated caller anyway. Losto marks the
+ * spot instead, and the reader can drop the picture in from their own device.
  */
-function createResolver(share: string, cookies?: string) {
-  let winner: ((fileId: string) => string) | null = null;
-  let hopeless = false;
+function toAssets(raw: RawMedia[]): Asset[] {
+  const out: Asset[] = [];
 
-  /*
-   * Only paths chatgpt.com's robots.txt allows are tried. The private file
-   * endpoints would very likely work, but they sit behind the catch-all
-   * `Disallow: /`, so an unresolved image is reported rather than fetched.
-   */
-  const templates: ((fileId: string) => string)[] = [
-    (id) => `https://chatgpt.com/backend-api/public_content/share/${share}/asset/${id}`,
-    (id) => `https://chatgpt.com/public-api/share/${share}/asset/${id}`,
-    (id) => `https://chatgpt.com/backend-anon/files/${id}/download`,
-  ];
-
-  return async function resolve(raw: RawMedia[]): Promise<Asset[]> {
-    const out: Asset[] = [];
-
-    for (const item of raw) {
-      if (item.url) {
-        const asset = makeAsset({
-          url: item.url,
-          kind: kindForUrl(item.url, item.mime) ?? "image",
-          alt: item.alt,
-          mime: item.mime,
-          width: item.width,
-          height: item.height,
-          prompt: item.prompt,
-        });
-        if (asset) out.push(asset);
-        continue;
-      }
-
-      const fileId = item.pointer?.match(POINTER_RE)?.[1];
-      if (!fileId) continue;
-
-      let resolved: string | null = null;
-      if (winner) {
-        resolved = await probe(winner(fileId), share, cookies);
-      } else if (!hopeless) {
-        for (const template of templates) {
-          const candidate = await probe(template(fileId), share, cookies);
-          if (candidate) {
-            winner = template;
-            resolved = candidate;
-            break;
-          }
-        }
-        // One conversation, one round of probing. Every later image in the same
-        // chat is served the same way, so retrying each one just wastes time.
-        if (!resolved) hopeless = true;
-      }
-
+  for (const item of raw) {
+    if (item.url) {
       const asset = makeAsset({
-        url: resolved ?? `chatgpt-file://${fileId}`,
-        kind: "image",
+        url: item.url,
+        kind: kindForUrl(item.url, item.mime) ?? "image",
         alt: item.alt,
+        mime: item.mime,
         width: item.width,
         height: item.height,
         prompt: item.prompt,
-        unavailable: !resolved,
-        unavailableReason: resolved
-          ? undefined
-          : "ChatGPT does not include generated images in a public share link - they only load for someone signed in to the account. Nothing can fetch this one.",
       });
       if (asset) out.push(asset);
+      continue;
     }
 
-    return out;
-  };
-}
+    const fileId = item.pointer?.match(POINTER_RE)?.[1];
+    if (!fileId) continue;
 
-/**
- * Confirms an endpoint really serves the bytes. Some hand back the media
- * directly, others answer with JSON holding a signed CDN link.
- */
-async function probe(url: string, share: string, cookies?: string): Promise<string | null> {
-  try {
-    // Every candidate goes through the same robots check as a page fetch.
-    const verdict = await checkUrl(new URL(url));
-    if (!verdict.allowed) return null;
-
-    const res = await fetch(url, {
-      redirect: "follow",
-      cache: "no-store",
-      signal: AbortSignal.timeout(POINTER_TIMEOUT_MS),
-      headers: {
-        "user-agent": BROWSER_UA,
-        accept: "image/*,video/*,application/json;q=0.8,*/*;q=0.5",
-        referer: `https://chatgpt.com/share/${share}`,
-        ...(cookies ? { cookie: cookies } : {}),
-      },
+    const asset = makeAsset({
+      url: `chatgpt-file://${fileId}`,
+      kind: "image",
+      alt: item.alt,
+      width: item.width,
+      height: item.height,
+      prompt: item.prompt,
+      unavailable: true,
+      unavailableReason:
+        "ChatGPT does not include generated images in a public share link - they only load for someone signed in to the account. Add the file from this device to keep it.",
     });
-    if (!res.ok) {
-      await res.body?.cancel().catch(() => {});
-      return null;
-    }
-
-    const mime = (res.headers.get("content-type") ?? "").toLowerCase();
-    if (/^(image|video|audio)\//.test(mime)) {
-      await res.body?.cancel().catch(() => {});
-      return res.url || url;
-    }
-    if (mime.includes("json")) {
-      const data = (await res.json()) as Record<string, unknown>;
-      const link = data.download_url ?? data.url ?? data.asset_url;
-      return typeof link === "string" && /^https?:\/\//.test(link) ? link : null;
-    }
-    await res.body?.cancel().catch(() => {});
-    return null;
-  } catch {
-    return null;
+    if (asset) out.push(asset);
   }
+
+  return out;
 }
 
 /** `linear_conversation` is already in reading order; `mapping` needs a walk. */

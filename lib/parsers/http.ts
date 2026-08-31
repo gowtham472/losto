@@ -45,21 +45,6 @@ export interface FetchedPage {
   contentType: string;
   /** True when the site refused the identified agent and a browser UA was used. */
   compatibility?: boolean;
-  /**
-   * Cookies the page handed back, ready to send on follow-up requests to the
-   * same site. A browser loading a shared page keeps its session for the images
-   * that page references; a stateless fetch would drop it.
-   */
-  cookies?: string;
-}
-
-/** Collapses Set-Cookie headers into a Cookie header value. */
-function collectCookies(res: Response): string | undefined {
-  const jar = res.headers.getSetCookie?.() ?? [];
-  const pairs = jar
-    .map((entry) => entry.split(";")[0]?.trim())
-    .filter((pair): pair is string => Boolean(pair?.includes("=")));
-  return pairs.length ? Array.from(new Set(pairs)).join("; ") : undefined;
 }
 
 export async function fetchPage(
@@ -102,6 +87,11 @@ export async function fetchPage(
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
+      // fetch() reports every transport failure as a bare "fetch failed"; the
+      // reason it actually gave up is one level down.
+      const cause =
+        err instanceof Error && err.cause instanceof Error ? err.cause.message : "";
+
       if (/timeout|abort/i.test(msg)) {
         throw new ExtractProblem(
           "network",
@@ -109,7 +99,27 @@ export async function fetchPage(
           "Check your connection and try again.",
         );
       }
-      throw new ExtractProblem("network", `Could not reach the link (${msg}).`);
+
+      /*
+       * Node caps response headers at 16 KB and some sites - Google's among
+       * them - answer with more than that. The server replied perfectly well;
+       * Losto simply could not read the reply. Saying "could not reach the
+       * link" would blame the reader's connection for something that is not
+       * theirs. Setting NODE_OPTIONS=--max-http-header-size=65536 on the
+       * deployment raises the cap and turns this into a real answer.
+       */
+      if (/headers overflow/i.test(cause)) {
+        throw new ExtractProblem(
+          "unsupported",
+          "That site answered with more header data than Losto can read.",
+          "Open the page yourself, copy it, and paste it here instead.",
+        );
+      }
+
+      throw new ExtractProblem(
+        "network",
+        `Could not reach the link (${cause || msg}).`,
+      );
     }
     return { res, body: await readCapped(res) };
   };
@@ -139,7 +149,6 @@ export async function fetchPage(
     body,
     contentType: res.headers.get("content-type") ?? "",
     compatibility,
-    cookies: collectCookies(res),
   };
 }
 

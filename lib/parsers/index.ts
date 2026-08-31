@@ -6,7 +6,6 @@ import { parseChatGpt } from "./chatgpt";
 import { parseClaude } from "./claude";
 import { parseGeneric } from "./generic";
 import { ExtractProblem } from "./http";
-import { parsePerplexity } from "./perplexity";
 
 export { ExtractProblem } from "./http";
 
@@ -108,8 +107,6 @@ function run(source: SourceId, url: string): Promise<ExtractResult> {
       return parseChatGpt(url);
     case "claude":
       return parseClaude(url);
-    case "perplexity":
-      return parsePerplexity(url);
     default:
       return parseGeneric(url, source);
   }

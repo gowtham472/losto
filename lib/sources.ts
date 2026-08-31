@@ -54,7 +54,9 @@ export const SOURCES: Record<SourceId, SourceInfo> = {
     hosts: ["perplexity.ai", "www.perplexity.ai"],
     example: "https://www.perplexity.ai/search/…",
     supported: true,
-    fetchable: true,
+    // Off: the only way in was an undocumented /rest/thread endpoint, which
+    // Perplexity's terms address directly and which refuses every caller anyway.
+    fetchable: false,
     pasteSteps: [
       "Open the thread in Perplexity.",
       "Copy the answer with the copy button, or select and copy it.",
@@ -66,7 +68,7 @@ export const SOURCES: Record<SourceId, SourceInfo> = {
     label: "Gemini",
     mark: "GM",
     color: "var(--brand-gemini)",
-    hosts: ["gemini.google.com", "g.co", "aistudio.google.com"],
+    hosts: ["gemini.google.com", "share.gemini.google", "g.co", "aistudio.google.com"],
     example: "https://g.co/gemini/share/…",
     supported: true,
     fetchable: true,

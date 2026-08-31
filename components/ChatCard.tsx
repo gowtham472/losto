@@ -56,7 +56,13 @@ export function ChatCard({
 
       {view === "list" ? (
         <>
-          <SourceMark source={chat.source} faviconId={chat.faviconAssetId} size="md" className="relative z-10" />
+          <SourceMark
+            source={chat.source}
+            sourceUrl={chat.sourceUrl}
+            faviconId={chat.faviconAssetId}
+            size="md"
+            className="relative z-10"
+          />
           <div className="relative z-10 min-w-0 flex-1 pointer-events-none">
             <p className="truncate text-[13px] font-semibold leading-tight tracking-[-0.015em] text-ink">
               {chat.title}
@@ -79,7 +85,12 @@ export function ChatCard({
           ) : null}
 
           <div className="pointer-events-none relative z-10 flex items-start gap-2.5">
-            <SourceMark source={chat.source} faviconId={chat.faviconAssetId} size="md" />
+            <SourceMark
+              source={chat.source}
+              sourceUrl={chat.sourceUrl}
+              faviconId={chat.faviconAssetId}
+              size="md"
+            />
             <p className="mt-0.5 line-clamp-2 flex-1 text-[13.5px] font-semibold leading-[1.35] tracking-[-0.015em] text-ink">
               {chat.title}
             </p>

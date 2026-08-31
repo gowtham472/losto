@@ -92,6 +92,15 @@ export default function LegalPage() {
               says which reason applied and shows you how to copy the conversation across yourself.
             </p>
             <p>
+              <strong className="font-semibold text-ink">Losto never asks for an account.</strong>{" "}
+              It has no field for an AI provider&apos;s password, and it does not read or store
+              authentication cookies, session tokens, access tokens or browser profiles. It cannot
+              sign in as you, and it has no way to reach a conversation that is not either in a file
+              you give it, text you paste, or a page the provider shows to anyone. The best way to
+              bring your history across is the export your provider will give you on request, which
+              Losto reads on this device without sending it anywhere.
+            </p>
+            <p>
               If you run a site and would rather Losto did not fetch it, write to {OPERATOR.email}.
               Sources can be switched off individually, and that is the response you should expect.
             </p>
@@ -239,6 +248,15 @@ export default function LegalPage() {
               publish someone else&apos;s work.
             </p>
             <p>
+              <strong className="font-semibold text-ink">
+                {OPERATOR.name} claims no ownership of anything you import.
+              </strong>{" "}
+              A saved conversation can contain your own words, an assistant&apos;s output, pictures
+              you uploaded, quoted material belonging to somebody else, and information about other
+              people. Saving it here changes none of that. You remain responsible for having the
+              right to keep and to pass on what you save.
+            </p>
+            <p>
               If you own content that someone has saved and you believe it is being misused, write
               to {OPERATOR.email} and it will be looked into.
             </p>
@@ -280,9 +298,17 @@ export default function LegalPage() {
               .
             </p>
             <p>
-              Saved items show the icon of the site they came from, fetched from that site, purely
-              to tell you where something came from. Those names and marks belong to their owners,
-              who neither endorse nor are affiliated with Losto.
+              Saved items show the icon of the site they came from, purely to tell you where
+              something came from. Most are fetched from the site itself; a few - ChatGPT, Claude,
+              Gemini and Wikipedia - are included with the app because their icon cannot be fetched
+              reliably. Those logos are the trademarks of their owners, reproduced unaltered and
+              used only to identify a source.
+            </p>
+            <p>
+              <strong className="font-semibold text-ink">Losto is an independent application.</strong>{" "}
+              It is not affiliated with, endorsed by, sponsored by or connected to OpenAI,
+              Anthropic, Google, Perplexity or any other provider, and nothing in it should be read
+              as suggesting otherwise. It is a reader for material you already have.
             </p>
           </Card>
         </section>

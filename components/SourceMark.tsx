@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { assetObjectUrl } from "@/lib/assets";
+import { bundledLogo } from "@/lib/logos";
 import { sourceInfo } from "@/lib/sources";
 import type { SourceId } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -15,25 +16,33 @@ const SIZES = {
 /**
  * Identifies where a saved item came from.
  *
- * The site's own icon is downloaded at import time and kept with the chat, so
- * ChatGPT, Claude and every blog show their real mark and it still works with
- * no connection. Using each publisher's own icon avoids shipping hand-traced
- * trademarks, and it stays right when a company changes its logo. Until the
- * icon lands - or if the site never served one - a tinted monogram stands in.
+ * Three things can fill the tile, in order. A mark that ships with the app,
+ * for the few sources whose icon cannot be fetched reliably - it is there on
+ * the first frame and needs no connection. Otherwise the icon downloaded from
+ * the site at import time, which stays right through a rebrand and covers every
+ * blog without bundling anything. Failing both, a tinted monogram.
+ *
+ * A bundled mark sits on white rather than on the surface colour: these are
+ * dark shapes on transparent backgrounds, and on a dark tile in dark mode they
+ * would disappear.
  */
 export function SourceMark({
   source,
+  sourceUrl,
   faviconId,
   size = "md",
   className,
 }: {
   source: SourceId;
+  /** Where the item came from, for marks matched by site rather than source. */
+  sourceUrl?: string;
   /** Stored favicon asset id from the chat record. */
   faviconId?: string;
   size?: keyof typeof SIZES;
   className?: string;
 }) {
   const info = sourceInfo(source);
+  const logo = bundledLogo(source, sourceUrl);
   // Tagged with the id it resolved, so a stale icon never outlives its chat.
   const [resolved, setResolved] = useState<{ id: string; url: string | null } | null>(null);
   const [failed, setFailed] = useState(false);
@@ -51,7 +60,7 @@ export function SourceMark({
   }, [faviconId]);
 
   const icon = resolved && resolved.id === faviconId ? resolved.url : null;
-  const showIcon = Boolean(icon) && !failed;
+  const showIcon = Boolean(logo || icon) && !failed;
 
   return (
     <span
@@ -59,7 +68,11 @@ export function SourceMark({
       className={cn(
         "flex shrink-0 select-none items-center justify-center overflow-hidden",
         dims.box,
-        showIcon ? "bg-surface shadow-hairline" : "font-mono font-semibold tracking-[0.02em]",
+        showIcon
+          ? logo
+            ? "bg-white shadow-hairline"
+            : "bg-surface shadow-hairline"
+          : "font-mono font-semibold tracking-[0.02em]",
         showIcon && dims.pad,
         className,
       )}
@@ -73,10 +86,10 @@ export function SourceMark({
             }
       }
     >
-      {showIcon && icon ? (
+      {showIcon && (logo || icon) ? (
         // eslint-disable-next-line @next/next/no-img-element -- blob: URLs cannot go through next/image
         <img
-          src={icon}
+          src={logo ? logo.src : (icon as string)}
           alt=""
           aria-hidden
           decoding="async"

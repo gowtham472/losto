@@ -8,6 +8,8 @@ import {
   Image as ImageIcon,
   Link2,
   Loader2,
+  AlertCircle,
+  FileJson,
   Sparkles,
   Users,
   Type,
@@ -35,6 +37,12 @@ import { Sheet } from "@/components/ui/sheet";
 import { useToast } from "@/components/ui/toast";
 import type { DownloadProgress } from "@/lib/assets";
 import { dedupeAssets, rewriteMedia } from "@/lib/media";
+import {
+  ExportProblem,
+  type ExportSummary,
+  describeExport,
+  readExport,
+} from "@/lib/exports";
 import { splitPastedTranscript, titleFromPaste } from "@/lib/paste";
 import { COLLECTION_COLORS, SOURCES, detectSource, sourceInfo } from "@/lib/sources";
 import { useLibrary, useOnline } from "@/lib/store";
@@ -57,7 +65,7 @@ export function ImportView() {
   const online = useOnline();
   const { collections, saveExtracted, addCollection } = useLibrary();
 
-  const [mode, setMode] = useState<"link" | "text">("link");
+  const [mode, setMode] = useState<"link" | "text" | "export">("link");
   // The Android share sheet lands here with the link in a query parameter.
   const [input, setInput] = useState(() => params.get("url") ?? params.get("text") ?? "");
   const [items, setItems] = useState<Item[]>([]);
@@ -254,8 +262,18 @@ export function ImportView() {
                 </>
               ),
             },
+            {
+              value: "export",
+              label: (
+                <>
+                  <FileJson size={13} strokeWidth={2.2} /> Export file
+                </>
+              ),
+            },
           ]}
         />
+
+        {mode === "export" ? <ExportImport /> : null}
 
         {mode === "link" ? (
           <Card className="p-3">
@@ -311,7 +329,7 @@ export function ImportView() {
               </Button>
             </div>
           </Card>
-        ) : (
+        ) : mode === "text" ? (
           <Card className="space-y-3 p-3">
             <div className="space-y-1.5">
               <Label>Title</Label>
@@ -339,7 +357,7 @@ export function ImportView() {
               </p>
             </div>
           </Card>
-        )}
+        ) : null}
 
         {/* filing */}
         {(mode === "text" && pasteBody.trim()) || ready.length ? (
@@ -748,5 +766,126 @@ function HowItWorks() {
         </span>
       </p>
     </section>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* export files                                                               */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Reading the file an assistant hands its own user.
+ *
+ * This is the route with nothing to weigh up: the reader asked their provider
+ * for their data, the provider gave it to them, and Losto reads it off the
+ * device. It never leaves the browser, it works offline, and it brings a whole
+ * history rather than one conversation.
+ */
+function ExportImport() {
+  const { saveExtracted } = useLibrary();
+  const router = useRouter();
+  const toast = useToast();
+  const [summary, setSummary] = useState<ExportSummary | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const read = async (file: File) => {
+    setProblem(null);
+    setSummary(null);
+    try {
+      setSummary(readExport(await file.text()));
+    } catch (error) {
+      setProblem(
+        error instanceof ExportProblem
+          ? error.message
+          : "Losto could not read that file.",
+      );
+    }
+  };
+
+  const save = async () => {
+    if (!summary) return;
+    setSaving(true);
+    try {
+      let last = "";
+      for (const chat of summary.chats) last = await saveExtracted(chat);
+      toast.success(
+        `${summary.chats.length} ${summary.chats.length === 1 ? "chat" : "chats"} saved`,
+        "They stay on this device.",
+      );
+      router.push(summary.chats.length === 1 ? `/chat?id=${last}` : "/library");
+    } catch {
+      toast.error("Could not save those conversations");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card className="space-y-3 p-3">
+      <div className="space-y-1.5">
+        <Label>Your own export, from the assistant itself</Label>
+        <p className="text-[12px] leading-relaxed text-ink-2">
+          Ask for your data, unzip what arrives, and pick{" "}
+          <code className="rounded bg-inset px-1 py-0.5 font-mono text-[11px]">
+            conversations.json
+          </code>{" "}
+          from inside it. The file is read here on your device - it is not uploaded, and this works
+          with no connection.
+        </p>
+        <ul className="ml-4 list-disc space-y-1 text-[11.5px] leading-relaxed text-ink-3">
+          <li>
+            <strong className="font-medium text-ink-2">ChatGPT</strong> - Settings → Data controls →
+            Export data
+          </li>
+          <li>
+            <strong className="font-medium text-ink-2">Claude</strong> - Settings → Privacy → Export
+            data
+          </li>
+        </ul>
+      </div>
+
+      <label className="flex cursor-pointer items-center justify-center gap-2 rounded-control bg-surface py-3 text-[13px] font-medium text-ink shadow-btn transition-colors hover:bg-hover">
+        <FileJson size={14} strokeWidth={2.2} />
+        Choose conversations.json
+        <input
+          type="file"
+          accept=".json,application/json"
+          className="hidden"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            event.target.value = "";
+            if (file) void read(file);
+          }}
+        />
+      </label>
+
+      {problem ? (
+        <Well className="flex items-start gap-2.5 p-3">
+          <AlertCircle size={14} strokeWidth={2.1} className="mt-px shrink-0 text-orange" />
+          <p className="text-[12px] leading-relaxed text-ink-2">{problem}</p>
+        </Well>
+      ) : null}
+
+      {summary ? (
+        <>
+          <Well className="flex items-start gap-2.5 p-3">
+            <SourceMark source={summary.source} size="md" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[12.5px] font-semibold text-ink">
+                {sourceInfo(summary.source).label} export
+              </p>
+              <p className="text-[11.5px] text-ink-2">{describeExport(summary)}</p>
+            </div>
+          </Well>
+          <Button variant="primary" size="lg" className="w-full" disabled={saving} onClick={save}>
+            {saving ? <Loader2 size={14} className="animate-spin" /> : null}
+            {saving
+              ? "Saving…"
+              : `Save ${summary.chats.length} ${summary.chats.length === 1 ? "chat" : "chats"} to my device`}
+          </Button>
+        </>
+      ) : null}
+    </Card>
   );
 }

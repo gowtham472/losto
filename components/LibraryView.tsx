@@ -244,7 +244,12 @@ export function LibraryView() {
                   className="group flex w-[232px] shrink-0 flex-col gap-2.5 rounded-card bg-surface p-3 shadow-card transition-colors hover:bg-hover"
                 >
                   <div className="flex items-center gap-2">
-                    <SourceMark source={chat.source} faviconId={chat.faviconAssetId} size="sm" />
+                    <SourceMark
+                      source={chat.source}
+                      sourceUrl={chat.sourceUrl}
+                      faviconId={chat.faviconAssetId}
+                      size="sm"
+                    />
                     <span className="font-mono text-[10px] tabnums text-ink-3">
                       {Math.round(chat.progress * 100)}%
                     </span>
