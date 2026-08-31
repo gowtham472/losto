@@ -174,7 +174,7 @@ export function LibraryView() {
             ) : null}
           </div>
 
-          <div className="no-scrollbar -mx-4 flex items-center gap-1.5 overflow-x-auto px-4 py-1 lg:-mx-8 lg:px-8">
+          <div className="no-scrollbar -mx-4 flex items-center gap-1.5 overflow-x-auto px-4 py-1.5 lg:-mx-8 lg:px-8">
             <Chip active={!hasFilters} onClick={() => router.replace(pathname, { scroll: false })}>
               All
             </Chip>
@@ -230,14 +230,22 @@ export function LibraryView() {
           </div>
         </div>
 
-        {/* continue reading */}
+        {/*
+          * Continue reading. The rail scrolls sideways, and a box that scrolls
+          * on one axis cannot stay visible on the other - overflow-x: auto
+          * silently makes overflow-y: auto as well. With no room to spare that
+          * clips the cards' ring and drop shadow flat against the top and
+          * bottom edges. The padding below gives the shadow somewhere to live
+          * and the negative margin takes it back out of the layout, so the
+          * spacing around the rail is unchanged.
+          */}
         {!hasFilters && continueReading.length ? (
           <section className="mb-6">
             <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">
               <Sparkles size={11} strokeWidth={2.4} />
               Pick up where you left off
             </p>
-            <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 lg:-mx-8 lg:px-8">
+            <div className="no-scrollbar -mx-4 -mb-3 -mt-1 flex gap-2 overflow-x-auto px-4 pb-3 pt-1 lg:-mx-8 lg:px-8">
               {continueReading.map((chat) => (
                 <Link
                   key={chat.id}
