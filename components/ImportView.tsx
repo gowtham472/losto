@@ -1,18 +1,21 @@
 "use client";
 
 import {
+  AlertCircle,
   AlertTriangle,
   ArrowRight,
+  Braces,
+  Check,
   CheckCircle2,
   ClipboardPaste,
+  Copy,
+  FileJson,
   Image as ImageIcon,
   Link2,
   Loader2,
-  AlertCircle,
-  FileJson,
   Sparkles,
-  Users,
   Type,
+  Users,
   WifiOff,
   X,
 } from "lucide-react";
@@ -26,6 +29,7 @@ import { SourceMark } from "@/components/SourceMark";
 import {
   Button,
   Card,
+  Chip,
   Field,
   Label,
   SectionTitle,
@@ -43,11 +47,20 @@ import {
   describeExport,
   readExport,
 } from "@/lib/exports";
+import { STRUCTURED_PROMPT, StructuredProblem, readStructured } from "@/lib/structured";
 import { splitPastedTranscript, titleFromPaste } from "@/lib/paste";
 import { COLLECTION_COLORS, SOURCES, detectSource, sourceInfo } from "@/lib/sources";
 import { useLibrary, useOnline } from "@/lib/store";
 import type { Asset, ExtractError, ExtractResult, SourceId } from "@/lib/types";
-import { cn, countWords, extractUrls, formatBytes, readClipboard, readingMinutes } from "@/lib/utils";
+import {
+  cn,
+  copyText,
+  countWords,
+  extractUrls,
+  formatBytes,
+  readClipboard,
+  readingMinutes,
+} from "@/lib/utils";
 
 type Item = {
   url: string;
@@ -58,6 +71,16 @@ type Item = {
 
 const FETCHED = ["chatgpt", "claude", "perplexity"] as const;
 
+/** Assistants worth offering by name on the structured-import panel. */
+const FETCHED_AND_PASTE = [
+  "chatgpt",
+  "claude",
+  "gemini",
+  "perplexity",
+  "grok",
+  "deepseek",
+] as const satisfies readonly SourceId[];
+
 export function ImportView() {
   const router = useRouter();
   const params = useSearchParams();
@@ -65,7 +88,7 @@ export function ImportView() {
   const online = useOnline();
   const { collections, saveExtracted, addCollection } = useLibrary();
 
-  const [mode, setMode] = useState<"link" | "text" | "export">("link");
+  const [mode, setMode] = useState<"link" | "text" | "export" | "structured">("link");
   // The Android share sheet lands here with the link in a query parameter.
   const [input, setInput] = useState(() => params.get("url") ?? params.get("text") ?? "");
   const [items, setItems] = useState<Item[]>([]);
@@ -244,7 +267,7 @@ export function ImportView() {
         <Segmented
           value={mode}
           onChange={(v) => setMode(v)}
-          className="w-full [&>button]:flex-1"
+          fill
           options={[
             {
               value: "link",
@@ -270,10 +293,19 @@ export function ImportView() {
                 </>
               ),
             },
+            {
+              value: "structured",
+              label: (
+                <>
+                  <Braces size={13} strokeWidth={2.2} /> Ask for JSON
+                </>
+              ),
+            },
           ]}
         />
 
         {mode === "export" ? <ExportImport /> : null}
+        {mode === "structured" ? <StructuredImport /> : null}
 
         {mode === "link" ? (
           <Card className="p-3">
@@ -883,6 +915,147 @@ function ExportImport() {
             {saving
               ? "Saving…"
               : `Save ${summary.chats.length} ${summary.chats.length === 1 ? "chat" : "chats"} to my device`}
+          </Button>
+        </>
+      ) : null}
+    </Card>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* structured JSON                                                            */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Asking the assistant to hand its own conversation over.
+ *
+ * The assistant knows exactly where each of its turns starts and stops, which
+ * is the one thing a pasted transcript can only ever guess at. Copy the prompt,
+ * send it in the chat, copy the JSON that comes back. Nothing is fetched, so it
+ * works for every assistant equally - including the ones whose share pages hold
+ * nothing a server can read.
+ */
+function StructuredImport() {
+  const { saveExtracted } = useLibrary();
+  const router = useRouter();
+  const toast = useToast();
+  const [source, setSource] = useState<SourceId>("chatgpt");
+  const [body, setBody] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Parsed on every keystroke so the reader sees it land, rather than finding
+  // out it was malformed only after pressing save.
+  const parsed = useMemo(() => {
+    if (!body.trim()) return null;
+    try {
+      return { ok: true as const, result: readStructured(body, source) };
+    } catch (error) {
+      return {
+        ok: false as const,
+        message:
+          error instanceof StructuredProblem ? error.message : "Losto could not read that.",
+      };
+    }
+  }, [body, source]);
+
+  const save = async () => {
+    if (!parsed?.ok) return;
+    setSaving(true);
+    try {
+      const id = await saveExtracted(parsed.result);
+      toast.success("Saved to your device");
+      router.push(`/chat?id=${id}`);
+    } catch {
+      toast.error("Could not save that conversation");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card className="space-y-3 p-3">
+      <div className="space-y-1.5">
+        <Label>Ask the assistant for the conversation</Label>
+        <p className="text-[12px] leading-relaxed text-ink-2">
+          Send this in the chat you want to keep. It replies with the whole conversation as JSON -
+          every turn, with its formatting, tables and code intact - and you paste that back here.
+          Works with any assistant, including the ones Losto cannot read from a link.
+        </p>
+      </div>
+
+      <Well className="relative p-3">
+        <pre className="no-scrollbar max-h-32 overflow-y-auto whitespace-pre-wrap break-words pr-20 font-mono text-[11px] leading-relaxed text-ink-2">
+          {STRUCTURED_PROMPT}
+        </pre>
+        <Button
+          size="sm"
+          className="absolute right-2 top-2"
+          onClick={async () => {
+            if (await copyText(STRUCTURED_PROMPT)) {
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1800);
+            }
+          }}
+        >
+          {copied ? (
+            <Check size={13} strokeWidth={2.5} className="text-green" />
+          ) : (
+            <Copy size={13} strokeWidth={2.2} />
+          )}
+          {copied ? "Copied" : "Copy prompt"}
+        </Button>
+      </Well>
+
+      <div className="space-y-1.5">
+        <Label>Which assistant</Label>
+        <div className="flex flex-wrap gap-1.5">
+          {FETCHED_AND_PASTE.map((id) => (
+            <Chip key={id} active={source === id} onClick={() => setSource(id)} tone={SOURCES[id].color}>
+              <SourceMark source={id} size="sm" />
+              {SOURCES[id].label}
+            </Chip>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>Paste its reply</Label>
+        <TextArea
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          rows={5}
+          spellCheck={false}
+          placeholder={'{\n  "losto": 1,\n  "title": "…",\n  "messages": [ … ]\n}'}
+          className="font-mono text-[12px]"
+        />
+      </div>
+
+      {parsed && !parsed.ok ? (
+        <Well className="flex items-start gap-2.5 p-3">
+          <AlertCircle size={14} strokeWidth={2.1} className="mt-px shrink-0 text-orange" />
+          <p className="text-[12px] leading-relaxed text-ink-2">{parsed.message}</p>
+        </Well>
+      ) : null}
+
+      {parsed?.ok ? (
+        <>
+          <Well className="flex items-start gap-2.5 p-3">
+            <Check size={14} strokeWidth={2.4} className="mt-px shrink-0 text-green" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[12.5px] font-semibold text-ink">{parsed.result.title}</p>
+              <p className="text-[11.5px] text-ink-2">
+                {parsed.result.messages.length} turns ·{" "}
+                {parsed.result.messages
+                  .reduce((n, m) => n + countWords(m.content), 0)
+                  .toLocaleString()}{" "}
+                words
+              </p>
+            </div>
+          </Well>
+          <Button variant="primary" size="lg" className="w-full" disabled={saving} onClick={save}>
+            {saving ? <Loader2 size={14} className="animate-spin" /> : null}
+            Save to my device
           </Button>
         </>
       ) : null}

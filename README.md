@@ -44,6 +44,9 @@ Built by [DoodleByte Studio](https://doodlebytestudio.in), Chennai.
 - One link or ten at once, with a live preview before anything is saved.
 - **Export file** - drop in `conversations.json` from ChatGPT's or Claude's own
   export and the whole history lands at once, parsed on the device.
+- **Ask for JSON** - copy a prompt, send it in the chat, paste back the JSON the
+  assistant replies with. It knows where its own turns begin and end, so nothing
+  has to be guessed at, and it works for every assistant equally.
 - **Paste text** for anything that cannot be fetched. `You said:` /
   `<assistant> said:` markers are split back into questions and answers. When a
   link cannot be read, Losto says why, shows the copy steps for that assistant
@@ -141,6 +144,7 @@ Built by [DoodleByte Studio](https://doodlebytestudio.in), Chennai.
 | Source | How it is read | Status |
 | --- | --- | --- |
 | **Your own export file** | `conversations.json` from ChatGPT or Claude, read in the browser | Whole history |
+| **Ask the assistant for JSON** | It hands the conversation over itself, in a small fixed shape | Any assistant |
 | Pasted text | Split back into questions and answers, media and all | Always available |
 | ChatGPT | The public `/share/<id>` page, decoding its React Router stream payload | Fetched |
 | Blogs, docs, Medium | Scored article extraction with metadata and media | Fetched |
@@ -148,6 +152,35 @@ Built by [DoodleByte Studio](https://doodlebytestudio.in), Chennai.
 | Gemini, Grok, DeepSeek, Copilot, Le Chat | Article extraction against the share page | Tried, falls back |
 | Perplexity | Not fetched. Their terms address automated extraction directly | Paste, or export |
 | ChatGPT generated images | Not published by OpenAI - see [Media](#media) | Add the file yourself |
+
+### Ask the assistant to hand it over
+
+Pasting a transcript works, but it arrives as whatever the clipboard made of
+it - speaker labels guessed at, wrapping baked in, tables flattened. **Add a
+chat → Ask for JSON** gives you a prompt to send in the chat instead. The
+assistant replies with the conversation as JSON, you paste that back, and every
+turn arrives with its Markdown intact.
+
+The shape is deliberately small, because every field an assistant has to
+remember is one it can get wrong:
+
+```json
+{
+  "losto": 1,
+  "title": "a short title",
+  "messages": [
+    { "role": "user", "content": "…" },
+    { "role": "assistant", "content": "…" }
+  ]
+}
+```
+
+Assistants fence their JSON, or introduce it with a sentence, or both.
+[`lib/structured.ts`](./lib/structured.ts) digs the object out rather than
+demanding a clean reply, accepts a bare `messages` array, and tolerates
+`human`/`model` in place of `user`/`assistant`. Nothing is fetched, so this
+route works for every assistant - including the ones whose share pages hold
+nothing a server can read.
 
 ### Your own export is the best route
 

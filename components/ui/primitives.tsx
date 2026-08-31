@@ -191,12 +191,19 @@ export function Segmented<T extends string>({
   value,
   onChange,
   size = "md",
+  fill,
   className,
 }: {
   options: { value: T; label: ReactNode; title?: string }[];
   value: T;
   onChange: (value: T) => void;
   size?: keyof typeof SEGMENT_SIZES;
+  /**
+   * Fill the container and wrap when it gets tight. Four options do not sit in
+   * a row on a phone, so the track becomes a grid that reflows to two columns
+   * rather than squeezing every label until it truncates.
+   */
+  fill?: boolean;
   className?: string;
 }) {
   const dims = SEGMENT_SIZES[size];
@@ -204,10 +211,16 @@ export function Segmented<T extends string>({
     <div
       role="radiogroup"
       className={cn(
-        "inline-flex items-center gap-0.5 rounded-control bg-inset shadow-hairline",
+        "items-center gap-0.5 rounded-control bg-inset shadow-hairline",
+        fill ? "grid w-full" : "inline-flex",
         dims.pad,
         className,
       )}
+      style={
+        fill
+          ? { gridTemplateColumns: "repeat(auto-fit, minmax(9.5rem, 1fr))" }
+          : undefined
+      }
     >
       {options.map((option) => {
         const active = option.value === value;
@@ -221,6 +234,7 @@ export function Segmented<T extends string>({
             onClick={() => onChange(option.value)}
             className={cn(
               "inline-flex items-center justify-center rounded-[6px]",
+              fill && "w-full",
               dims.button,
               "font-medium transition-[background-color,box-shadow,color] duration-150",
               active
