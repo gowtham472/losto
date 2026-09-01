@@ -23,6 +23,9 @@ const SOURCE_LOGOS: Partial<Record<SourceId, Logo>> = {
   chatgpt: { src: "/icons/chatgpt-icon.webp", width: 512, height: 512 },
   claude: { src: "/icons/claude-ai-icon.webp", width: 512, height: 512 },
   gemini: { src: "/icons/google-gemini-icon.webp", width: 512, height: 512 },
+  perplexity: { src: "/icons/perplexity-ai-icon.webp", width: 512, height: 512 },
+  grok: { src: "/icons/grok-icon.webp", width: 512, height: 512 },
+  deepseek: { src: "/icons/deepseek-logo-icon.webp", width: 512, height: 512 },
 };
 
 /** Sites worth a bundled mark even though they are not an assistant. */

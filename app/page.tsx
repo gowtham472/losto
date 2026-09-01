@@ -414,7 +414,7 @@ function SignalCard() {
         <p className="mt-2 text-[12px] leading-snug text-ink">Wifi just dropped mid-question.</p>
       </div>
 
-      <div className="absolute bottom-[-52px] right-0 w-[200px] rounded-card bg-surface p-3 shadow-overlay">
+      <div className="absolute bottom-[-80px] right-[-30] w-[200px] rounded-card bg-surface p-3 shadow-overlay">
         <p className="flex items-center gap-1.5 font-mono text-[9.5px] font-semibold uppercase tracking-[0.06em] text-green">
           <span className="size-1.5 rounded-full bg-green" />
           Already saved
