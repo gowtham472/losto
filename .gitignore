@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Stray study material - the icons folder is for app assets.
+public/icons/*.pdf
