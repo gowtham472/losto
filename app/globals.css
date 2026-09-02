@@ -551,3 +551,116 @@ mark.losto-hit {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* marketing surface                                                          */
+/*                                                                            */
+/* The page in front of the app, and only that page. It runs on pure black    */
+/* rather than the app's near-black, because a landing page is looked at once */
+/* in a bright room and wants the contrast, while the reader is looked at for */
+/* an hour and does not. Every token below is a neutral: no hue at all, so    */
+/* the source logos and the accent are the only colour on the page.           */
+/* -------------------------------------------------------------------------- */
+
+[data-surface="marketing"] {
+  --page: oklch(0% 0 0);
+  --canvas: oklch(4.2% 0 0);
+  --surface: oklch(8.2% 0 0);
+  --inset: oklch(5.6% 0 0);
+  --hover: oklch(12.5% 0 0);
+  --hover-2: oklch(16% 0 0);
+
+  --ink: oklch(98% 0 0);
+  --ink-2: oklch(71% 0 0);
+  --ink-3: oklch(49% 0 0);
+
+  --line: oklch(100% 0 0 / 0.08);
+  --line-strong: oklch(100% 0 0 / 0.16);
+  --field: oklch(10% 0 0);
+  --stripe: oklch(100% 0 0 / 0.05);
+  --stripe-bg: oklch(3% 0 0);
+
+  --shadow-hairline: 0 0 0 1px var(--line);
+  --shadow-btn: 0 0 0 1px oklch(100% 0 0 / 0.1), 0 1px 2px oklch(0% 0 0 / 0.6);
+  --shadow-card: 0 0 0 1px oklch(100% 0 0 / 0.07), 0 1px 2px oklch(0% 0 0 / 0.5),
+    0 12px 40px oklch(0% 0 0 / 0.5);
+  --shadow-raised: 0 0 0 1px oklch(100% 0 0 / 0.1), 0 2px 10px oklch(0% 0 0 / 0.55);
+
+  font-family: var(--font-sora), var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Headings keep Bricolage - it is the display face, not the body face. */
+[data-surface="marketing"] .font-display {
+  font-family: var(--font-display);
+}
+
+/* --- motion ---------------------------------------------------------------- */
+
+@keyframes losto-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.55; }
+  50% { transform: translate3d(0, -3%, 0) scale(1.08); opacity: 0.8; }
+}
+
+@keyframes losto-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Draws a stroked path on, for the diagrams that trace a connection. */
+@keyframes losto-draw {
+  from { stroke-dashoffset: var(--draw-length, 400); }
+  to { stroke-dashoffset: 0; }
+}
+
+/* A packet travelling along one of those paths. */
+@keyframes losto-travel {
+  from { offset-distance: 0%; opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  to { offset-distance: 100%; opacity: 0; }
+}
+
+@keyframes losto-bars {
+  0%, 18% { opacity: 1; }
+  30%, 100% { opacity: 0.16; }
+}
+
+@keyframes losto-tick {
+  0%, 40% { stroke-dashoffset: 22; opacity: 0; }
+  55%, 100% { stroke-dashoffset: 0; opacity: 1; }
+}
+
+@keyframes losto-scan {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(var(--scan-distance, 60px)); }
+}
+
+@keyframes losto-hue {
+  to { filter: hue-rotate(360deg); }
+}
+
+.animate-drift { animation: losto-drift 14s ease-in-out infinite; }
+.animate-rise { animation: losto-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-draw { animation: losto-draw 2.4s ease-in-out infinite alternate; }
+.animate-travel { animation: losto-travel 3s linear infinite; }
+.animate-bars { animation: losto-bars 4s ease-in-out infinite; }
+.animate-tick { animation: losto-tick 3.2s ease-in-out infinite; }
+.animate-scan { animation: losto-scan 2.6s ease-in-out infinite; }
+.animate-hue { animation: losto-hue 6s linear infinite; }
+
+/*
+ * Every one of the above is decoration. A reader who has asked their system to
+ * stop moving things gets a still page, not a slower one.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .animate-drift,
+  .animate-rise,
+  .animate-draw,
+  .animate-travel,
+  .animate-bars,
+  .animate-tick,
+  .animate-scan,
+  .animate-hue {
+    animation: none;
+  }
+}

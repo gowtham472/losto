@@ -1,5 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, JetBrains_Mono, Newsreader, Plus_Jakarta_Sans } from "next/font/google";
+import {
+  Bricolage_Grotesque,
+  JetBrains_Mono,
+  Newsreader,
+  Plus_Jakarta_Sans,
+  Sora,
+} from "next/font/google";
 import { AppShell } from "@/components/AppShell";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { ToastProvider } from "@/components/ui/toast";
@@ -29,6 +35,18 @@ const jetbrains = JetBrains_Mono({
 
 const newsreader = Newsreader({
   variable: "--font-newsreader",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+/*
+ * The marketing page only. Plus Jakarta Sans is the app's voice and should stay
+ * that way; the page in front of it is allowed a different one, and Sora's
+ * flatter geometry sits better under Bricolage's headlines than a second
+ * humanist face would.
+ */
+const sora = Sora({
+  variable: "--font-sora",
   subsets: ["latin"],
   display: "swap",
 });
@@ -123,7 +141,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${jakarta.variable} ${bricolage.variable} ${jetbrains.variable} ${newsreader.variable}`}
+      className={`${jakarta.variable} ${bricolage.variable} ${jetbrains.variable} ${newsreader.variable} ${sora.variable}`}
     >
       <head>
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: pre-paint theme sync */}

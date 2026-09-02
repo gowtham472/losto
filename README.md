@@ -461,8 +461,24 @@ The interface follows the [Beautiful UI](https://www.beautifului.dev) system:
 OKLCH surface/ink/line tokens, hairline-ring shadows instead of borders, tight
 negative letter-spacing and a small type scale. Typefaces are Plus Jakarta Sans
 for the interface, Bricolage Grotesque for display, JetBrains Mono for code, and
-Newsreader for the serif reading mode. The landing page is built from the same
-tokens as the app rather than a separate template.
+Newsreader for the serif reading mode.
+
+The landing page runs on the same tokens, redefined for one subtree. Everything
+under `[data-surface="marketing"]` - the block at the end of `app/globals.css` -
+gets a pure black page rather than the app's near-black, neutrals with no hue in
+them at all, and Sora as the body face. A landing page is looked at once in a
+bright room and wants the contrast; a reader is looked at for an hour and does
+not. Headings stay on Bricolage, and the app is untouched by any of it.
+
+Its illustrations are in [`components/Marketing.tsx`](./components/Marketing.tsx)
+and each one draws something the app does, to the proportions of the thing it
+depicts: a handset at 9:19.5, a QR code with real finder squares and a timing
+track, a signal meter that empties from the tallest bar down. Motion is CSS
+only, and every animation stops under `prefers-reduced-motion`.
+
+The colour-theme pill in the hero repaints the page's accent instead of
+collecting an email for a feature with no ship date. Tapping it cycles through
+the palettes being considered; the whole page follows, illustrations included.
 
 ## Privacy
 
