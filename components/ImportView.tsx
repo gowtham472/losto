@@ -248,7 +248,13 @@ export function ImportView() {
 
   return (
     <>
+      {/*
+        * Not sticky. This page is a form, and a pinned title buys nothing while
+        * the mode switcher directly under it slides beneath the bar and loses
+        * its top edge the moment the page moves.
+        */}
       <PageHeader
+        sticky={false}
         title="Add a chat"
         subtitle="Paste a share link - Losto pulls the whole conversation onto this device."
       />

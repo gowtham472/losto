@@ -92,7 +92,7 @@ export function SearchView() {
       />
 
       <div className="mx-auto max-w-3xl px-4 pb-10 lg:px-8">
-        <div className="sticky top-[68px] z-20 -mx-4 bg-page/90 px-4 pb-3 backdrop-blur-xl lg:top-[92px] lg:-mx-8 lg:px-8">
+        <div className="sticky top-[68px] z-20 -mx-4 bg-page px-4 pb-3 lg:top-[92px] lg:-mx-8 lg:px-8">
           <div className="relative">
             <SearchIcon
               size={15}

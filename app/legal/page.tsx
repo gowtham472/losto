@@ -5,9 +5,25 @@ import { PageHeader } from "@/components/AppShell";
 import { Card, SectionTitle, Well } from "@/components/ui/primitives";
 import { OPERATOR, isConfigured } from "@/lib/legal";
 
+const TITLE = "Privacy and terms";
+const DESCRIPTION = "How Losto handles your data, and the terms you use it under.";
+
 export const metadata: Metadata = {
-  title: "Privacy and terms",
-  description: "How Losto handles your data, and the terms you use it under.",
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: "/legal" },
+  robots: { index: true, follow: true },
+  openGraph: {
+    type: "website",
+    url: "/legal",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export default function LegalPage() {

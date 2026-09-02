@@ -269,7 +269,7 @@ export function ReaderView() {
       onAttach={attachLocal}
     >
     <div className="min-h-dvh bg-page">
-      <header className="sticky top-0 z-40 bg-page/85 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 bg-page">
         <div className="mx-auto flex h-12 max-w-3xl items-center gap-1 px-2 lg:px-4">
           <Button
             variant="ghost"

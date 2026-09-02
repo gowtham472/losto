@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { StudySessionView } from "@/components/StudySessionView";
 import { Skeleton } from "@/components/ui/primitives";
 
-export const metadata: Metadata = { title: "Study session" };
+export const metadata: Metadata = { title: "Study session", robots: { index: false, follow: false } };
 
 export default function StudySessionPage() {
   return (

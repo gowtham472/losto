@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { ReaderView } from "@/components/ReaderView";
 import { Skeleton } from "@/components/ui/primitives";
 
-export const metadata: Metadata = { title: "Reading" };
+export const metadata: Metadata = { title: "Reading", robots: { index: false, follow: false } };
 
 export default function ChatPage() {
   return (

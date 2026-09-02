@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // No reason to advertise the framework to every crawler and scraper.
+  poweredByHeader: false,
   async headers() {
     return [
       {

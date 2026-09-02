@@ -117,7 +117,7 @@ function StudySession({ id }: { id: string }) {
   return (
     <AssetProvider assets={assets} version={chat?.assetIds?.length ?? 0}>
     <div className="flex min-h-dvh flex-col bg-page">
-      <header className="sticky top-0 z-30 bg-page/85 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 bg-page">
         <div className="mx-auto flex h-12 max-w-3xl items-center gap-2 px-2 lg:px-4">
           <Button
             variant="ghost"

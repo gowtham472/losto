@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { PageHeader } from "@/components/AppShell";
 import { ImportView } from "@/components/ImportView";
 
-export const metadata: Metadata = { title: "Add a chat" };
+export const metadata: Metadata = { title: "Add a chat", robots: { index: false, follow: false } };
 
 export default function ImportPage() {
   return (

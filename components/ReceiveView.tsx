@@ -24,6 +24,7 @@ export function ReceiveView() {
   return (
     <>
       <PageHeader
+        sticky={false}
         title="Receive a chat"
         subtitle="From someone next to you. No internet, no account, nothing through a server."
       />

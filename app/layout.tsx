@@ -3,6 +3,8 @@ import { Bricolage_Grotesque, JetBrains_Mono, Newsreader, Plus_Jakarta_Sans } fr
 import { AppShell } from "@/components/AppShell";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { ToastProvider } from "@/components/ui/toast";
+import { STUDIO } from "@/lib/legal";
+import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, OG_LOCALE, SITE_NAME, SITE_URL } from "@/lib/seo";
 import { LibraryProvider } from "@/lib/store";
 import "katex/dist/katex.min.css";
 import "./globals.css";
@@ -32,20 +34,66 @@ const newsreader = Newsreader({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Losto - AI answers, saved offline",
+    default: DEFAULT_TITLE,
     template: "%s · Losto",
   },
-  description:
-    "Paste an AI chat share link, or any article, and keep the whole thing on your phone. Works with no signal.",
-  applicationName: "Losto",
+  description: DEFAULT_DESCRIPTION,
+  applicationName: SITE_NAME,
   manifest: "/manifest.webmanifest",
+  keywords: [
+    "save ChatGPT conversation",
+    "save AI chat offline",
+    "offline AI chat reader",
+    "save Claude chat",
+    "save Perplexity answers",
+    "read AI chats offline",
+    "offline study app",
+    "PWA for students",
+  ],
+  authors: [{ name: STUDIO.name, url: STUDIO.site }],
+  creator: STUDIO.name,
+  publisher: STUDIO.name,
+  category: "education",
+  alternates: { canonical: "/" },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: SITE_NAME,
+    locale: OG_LOCALE,
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+  },
   appleWebApp: {
     capable: true,
     title: "Losto",
     statusBarStyle: "default",
   },
   formatDetection: { telephone: false },
+  /**
+   * Unset unless the site is verified with Search Console - an empty
+   * verification tag is harmless, but there's no reason to ship one.
+   */
+  verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
+    : undefined,
   /*
    * No `icons` block on purpose. app/favicon.ico, app/icon.svg, app/icon1.png
    * and app/apple-icon.png are picked up by the App Router's file convention

@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/AppShell";
 import { ChatCardSkeleton } from "@/components/ChatCard";
 import { LibraryView } from "@/components/LibraryView";
+
+/** Every user's library is different and lives in their own browser - nothing here is worth indexing. */
+export const metadata: Metadata = {
+  title: "Library",
+  robots: { index: false, follow: false },
+};
 
 export default function HomePage() {
   return (

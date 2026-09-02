@@ -15,16 +15,31 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Wordmark } from "@/components/AppShell";
 import { STUDIO } from "@/lib/legal";
+import { OG_LOCALE, SITE_NAME } from "@/lib/seo";
+import { buildLandingJsonLd } from "@/lib/structured-data";
+
+const TITLE = "Losto - save AI chats and articles to read offline";
+const DESCRIPTION =
+  "Paste a ChatGPT, Claude or Perplexity share link, or any blog post, and keep the whole thing on your phone - answers, code, tables and formulas. Built for students whose campus wifi gives up right when they need their notes.";
+const SOCIAL_DESCRIPTION =
+  "Save AI conversations and tech articles to your phone. Works in airplane mode. No account, and nothing leaves your device.";
 
 export const metadata: Metadata = {
-  title: "Losto - save AI chats and articles to read offline",
-  description:
-    "Paste a ChatGPT, Claude or Perplexity share link, or any blog post, and keep the whole thing on your phone - answers, code, tables and formulas. Built for students whose campus wifi gives up right when they need their notes.",
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: { canonical: "/" },
   openGraph: {
-    title: "Losto - save AI chats and articles to read offline",
-    description:
-      "Save AI conversations and tech articles to your phone. Works in airplane mode. No account, and nothing leaves your device.",
     type: "website",
+    url: "/",
+    siteName: SITE_NAME,
+    locale: OG_LOCALE,
+    title: TITLE,
+    description: SOCIAL_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: SOCIAL_DESCRIPTION,
   },
 };
 
@@ -35,8 +50,15 @@ export const metadata: Metadata = {
  * scoped to this subtree so it cascades to every utility class inside.
  */
 export default function LandingPage() {
+  const jsonLd = buildLandingJsonLd();
+
   return (
     <div data-theme="dark" className="min-h-dvh bg-page">
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD has no JSX equivalent */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <SiteNav />
       <Hero />
       <SourcesBar />

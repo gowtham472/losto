@@ -236,7 +236,10 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        "z-30 bg-page/90 backdrop-blur-xl",
+        // Solid, not frosted. A sticky bar the page slides under is only
+        // legible if it actually covers what passes behind it; at 90% the
+        // text underneath shows through as a smear however hard it is blurred.
+        "z-30 bg-page",
         sticky && "sticky top-0",
       )}
     >

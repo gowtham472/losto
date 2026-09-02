@@ -438,6 +438,25 @@ function readThoughts(content: Record<string, unknown>): string {
  * alone they render as tofu, so swap the ones we can resolve for real links and
  * drop the rest.
  */
+/**
+ * Whether a content reference is safe to substitute across the whole message.
+ *
+ * The replacement is a blind split/join, so a `matched_text` that appears
+ * everywhere would be rewritten everywhere. ChatGPT emits `sources_footnote`
+ * entries whose matched_text is a single space and whose url is empty: taken at
+ * face value that deletes every space in the answer, which is exactly what it
+ * did until this check existed.
+ *
+ * A real marker is wrapped in private-use characters. Anything else is only
+ * touched when it carries a url and is long enough not to be ordinary prose -
+ * and plain text is never deleted, only ever linked.
+ */
+function isCitationMarker(matched: string, url: string): boolean {
+  if (!matched.trim()) return false;
+  if (/[-]/.test(matched)) return true;
+  return Boolean(url) && matched.length >= 8;
+}
+
 function cleanText(text: string, meta: Record<string, unknown>): string {
   let out = text;
 
@@ -446,8 +465,8 @@ function cleanText(text: string, meta: Record<string, unknown>): string {
     for (const raw of refs) {
       const ref = raw as Record<string, unknown>;
       const matched = typeof ref.matched_text === "string" ? ref.matched_text : "";
-      if (!matched || !out.includes(matched)) continue;
       const url = typeof ref.url === "string" ? ref.url : "";
+      if (!isCitationMarker(matched, url) || !out.includes(matched)) continue;
       const title =
         (typeof ref.title === "string" && ref.title) ||
         (typeof ref.alt === "string" && ref.alt) ||

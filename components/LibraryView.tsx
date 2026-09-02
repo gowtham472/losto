@@ -148,7 +148,7 @@ export function LibraryView() {
         ) : null}
 
         {/* filters */}
-        <div className="sticky top-[68px] z-20 -mx-4 mb-5 bg-page/90 px-4 pb-3 pt-2 backdrop-blur-xl lg:top-[92px] lg:-mx-8 lg:px-8">
+        <div className="sticky top-[68px] z-20 -mx-4 mb-5 bg-page px-4 pb-3 pt-2 lg:top-[92px] lg:-mx-8 lg:px-8">
           <div className="relative mb-2">
             <Search
               size={14}

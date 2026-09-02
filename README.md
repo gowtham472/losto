@@ -387,6 +387,8 @@ rebuild.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | `https://losto.doodlebytestudio.in` | Canonical origin used in metadata, the sitemap and robots.txt |
+| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | unset | Google Search Console verification meta tag, if you use one |
 | `NEXT_PUBLIC_LOSTO_OPERATOR` | `DoodleByte Studio` | Publisher named in the privacy notice |
 | `NEXT_PUBLIC_LOSTO_CONTACT` | `doodlebyte.studio@gmail.com` | Where data requests go |
 | `NEXT_PUBLIC_LOSTO_GRIEVANCE` | same as contact | Grievance contact the DPDP Act requires |
@@ -422,8 +424,11 @@ Losto needs a Node runtime for `/api/extract` - a static export will not work.
 Any Next.js host is fine. Serve it over HTTPS or the service worker and install
 prompt will not activate.
 
-After deploying, check `/legal` shows no warning banner, `/robots.txt` returns
-200, and `/api/asset` returns `400` rather than `404`.
+After deploying, check `/legal` shows no warning banner, `/robots.txt` and
+`/sitemap.xml` both return 200, `/api/asset` returns `400` rather than `404`,
+and a link to `/` pasted into WhatsApp or Slack shows the generated preview
+card (confirms `metadataBase`/`NEXT_PUBLIC_SITE_URL` resolved to the real
+hostname, not `localhost`).
 
 ## Before releasing publicly
 
