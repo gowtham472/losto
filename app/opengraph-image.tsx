@@ -8,9 +8,8 @@ export const contentType = OG_IMAGE_CONTENT_TYPE;
 export default function Image() {
   return new ImageResponse(
     renderOgImage({
-      eyebrow: "Works with the wifi off",
-      title: "Your AI answers, on your phone.",
-      subtitle: "Save a ChatGPT, Claude or Perplexity link and keep it - offline, for good.",
+      title: "Losto",
+      subtitle: "Save AI chats and articles. Read them with the signal off.",
     }),
     { ...size },
   );

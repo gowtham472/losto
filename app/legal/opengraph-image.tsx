@@ -8,8 +8,7 @@ export const contentType = OG_IMAGE_CONTENT_TYPE;
 export default function Image() {
   return new ImageResponse(
     renderOgImage({
-      eyebrow: "Losto",
-      title: "Privacy and terms.",
+      title: "Privacy and terms",
       subtitle: "Everything you save stays on your device. No account, no server-side copy.",
     }),
     { ...size },

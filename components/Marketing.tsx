@@ -431,3 +431,61 @@ export function HandoffArt({ className }: { className?: string }) {
     </svg>
   );
 }
+
+/* -------------------------------------------------------------------------- */
+/* the sky                                                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The decor that turns a `.marketing-sky` panel into the sky on the social
+ * card: thin white circle arcs, and soft petals of light fanning up through
+ * the blue. Same geometry as lib/og-image.tsx, kept in step by eye.
+ *
+ * Everything here is aria-hidden decoration behind real content, absolutely
+ * positioned, and clipped by whichever panel it sits in.
+ */
+export function Sky({ dim }: { dim?: boolean }) {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      {/* petals of light, blurred well past their own size */}
+      <div
+        className="animate-drift absolute left-[38%] top-[18%] h-[130%] w-[9%] rounded-full blur-[60px]"
+        style={{ background: "oklch(97% 0.02 235)", opacity: dim ? 0.35 : 0.65, rotate: "24deg" }}
+      />
+      <div
+        className="animate-drift absolute left-[52%] top-[8%] h-[150%] w-[11%] rounded-full blur-[70px]"
+        style={{
+          background: "oklch(98% 0.015 240)",
+          opacity: dim ? 0.32 : 0.6,
+          rotate: "38deg",
+          animationDelay: "-5s",
+        }}
+      />
+      <div
+        className="animate-drift absolute left-[66%] top-[14%] h-[130%] w-[10%] rounded-full blur-[65px]"
+        style={{
+          background: "oklch(93% 0.04 300)",
+          opacity: dim ? 0.26 : 0.5,
+          rotate: "52deg",
+          animationDelay: "-9s",
+        }}
+      />
+
+      {/* the thin white lines */}
+      <svg
+        className="absolute inset-0 size-full"
+        viewBox="0 0 1200 630"
+        preserveAspectRatio="xMidYMid slice"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="1.5"
+      >
+        <line x1="-100" y1="190" x2="1300" y2="190" opacity={dim ? 0.4 : 0.6} vectorEffect="non-scaling-stroke" />
+        <circle cx="1010" cy="935" r="555" opacity={dim ? 0.35 : 0.55} vectorEffect="non-scaling-stroke" />
+        <circle cx="1195" cy="255" r="425" opacity={dim ? 0.28 : 0.45} vectorEffect="non-scaling-stroke" />
+        <circle cx="105" cy="905" r="520" opacity={dim ? 0.24 : 0.4} vectorEffect="non-scaling-stroke" />
+        <circle cx="585" cy="-330" r="610" opacity={dim ? 0.2 : 0.35} vectorEffect="non-scaling-stroke" />
+      </svg>
+    </div>
+  );
+}

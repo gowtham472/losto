@@ -465,10 +465,12 @@ Newsreader for the serif reading mode.
 
 The landing page runs on the same tokens, redefined for one subtree. Everything
 under `[data-surface="marketing"]` - the block at the end of `app/globals.css` -
-gets a pure black page rather than the app's near-black, neutrals with no hue in
-them at all, and Sora as the body face. A landing page is looked at once in a
-bright room and wants the contrast; a reader is looked at for an hour and does
-not. Headings stay on Bricolage, and the app is untouched by any of it.
+gets a light page with an azure sky gradient carrying the hero, the feature
+panels and the closing, and Sora as the body face. The sky - soft petals of
+light and thin white circle arcs over the blue - is the same one drawn as SVG
+on the social cards in `lib/og-image.tsx`, so the card someone taps in a chat
+matches the page they land on. Headings stay on Bricolage, and the app is
+untouched by any of it.
 
 Its illustrations are in [`components/Marketing.tsx`](./components/Marketing.tsx)
 and each one draws something the app does, to the proportions of the thing it

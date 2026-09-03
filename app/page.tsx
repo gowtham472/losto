@@ -9,7 +9,7 @@ import {
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Wordmark } from "@/components/AppShell";
-import { ChecklistArt, HandoffArt, OfflineArt } from "@/components/Marketing";
+import { ChecklistArt, HandoffArt, OfflineArt, Sky } from "@/components/Marketing";
 import { SourceMark } from "@/components/SourceMark";
 import { ThemeTease } from "@/components/ThemeTease";
 import { STUDIO } from "@/lib/legal";
@@ -45,16 +45,17 @@ export const metadata: Metadata = {
 /**
  * The page in front of the app.
  *
- * `data-surface="marketing"` swaps the palette to pure black and the body face
- * to Sora, for this subtree only - see the block at the end of globals.css.
- * Headings stay on Bricolage, which is the display face everywhere and not the
- * one being changed here. The app itself is untouched by any of it.
+ * `data-surface="marketing"` swaps the palette to the light azure system and
+ * the body face to Sora, for this subtree only - see the block at the end of
+ * globals.css. The azure sky gradient (the same one on the social card in
+ * lib/og-image.tsx) carries the hero, the feature panels and the closing;
+ * everything between them sits on white. The app itself is untouched.
  */
 export default function LandingPage() {
   const jsonLd = buildLandingJsonLd();
 
   return (
-    <div data-theme="dark" data-surface="marketing" className="min-h-dvh bg-page text-ink">
+    <div data-theme="light" data-surface="marketing" className="min-h-dvh bg-page text-ink">
       {/* biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD has no JSX equivalent */}
       <script
         type="application/ld+json"
@@ -84,7 +85,7 @@ function SiteNav() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 border-b border-line bg-page">
+    <header className="sticky top-0 z-50 border-b border-line bg-page/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-5 lg:px-8">
         <Wordmark />
         <nav className="ml-auto hidden items-center gap-7 md:flex">
@@ -92,7 +93,7 @@ function SiteNav() {
             <a
               key={link.href}
               href={link.href}
-              className="text-[13px] text-ink-2 transition-colors hover:text-ink"
+              className="text-[13px] font-medium text-ink-2 transition-colors hover:text-ink"
             >
               {link.label}
             </a>
@@ -100,7 +101,7 @@ function SiteNav() {
         </nav>
         <Link
           href="/library"
-          className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-control bg-ink px-4 text-[13px] font-semibold text-page transition-opacity hover:opacity-90 md:ml-0"
+          className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-control bg-accent px-4 text-[13px] font-semibold text-accent-fg transition-opacity hover:opacity-90 md:ml-0"
         >
           Open Losto
           <ArrowRight size={14} strokeWidth={2.5} />
@@ -114,32 +115,20 @@ function SiteNav() {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden">
-      {/*
-       * One soft light source behind the headline, drifting. Pure black stays
-       * pure black at the edges; with nothing at all breaking it up the top of
-       * the page reads as a hole rather than a surface.
-       */}
-      <div
-        aria-hidden
-        className="animate-drift pointer-events-none absolute left-1/2 top-[-20%] size-[720px] -translate-x-1/2 rounded-full blur-[120px]"
-        style={{
-          background:
-            "radial-gradient(circle, oklch(68% 0.173 253.301 / 0.18) 0%, transparent 68%)",
-        }}
-      />
+    <section className="marketing-sky relative overflow-hidden">
+      <Sky />
 
-      <div className="relative mx-auto grid max-w-6xl gap-12 px-5 pb-20 pt-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,340px)] lg:items-center lg:gap-10 lg:px-8 lg:pb-28 lg:pt-20">
+      <div className="relative mx-auto grid max-w-6xl gap-12 px-5 pb-24 pt-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,340px)] lg:items-center lg:gap-10 lg:px-8 lg:pb-32 lg:pt-24">
         <div className="animate-rise">
           <ThemeTease />
 
-          <h1 className="mt-6 max-w-[16ch] font-display text-[42px] font-bold leading-[1.02] tracking-[-0.04em] text-ink sm:text-[58px] lg:text-[64px]">
+          <h1 className="mt-6 max-w-[16ch] font-display text-[42px] font-bold leading-[1.02] tracking-[-0.04em] text-white sm:text-[58px] lg:text-[64px]">
             Your answers,
             <br />
-            <span className="text-ink-3">with the signal off.</span>
+            <span className="text-white/70">with the signal off.</span>
           </h1>
 
-          <p className="mt-6 max-w-[52ch] text-[15px] leading-relaxed text-ink-2 sm:text-[16px]">
+          <p className="mt-6 max-w-[52ch] text-[15px] leading-relaxed text-white/85 sm:text-[16px]">
             You work through a question bank with an assistant at midnight. Next morning the campus
             wifi gives up and none of it is there. Losto takes the share link and keeps the whole
             conversation - every answer, table, formula and diagram - on your phone.
@@ -148,20 +137,20 @@ function Hero() {
           <div className="mt-9 flex flex-wrap items-center gap-3">
             <Link
               href="/library"
-              className="inline-flex h-12 items-center gap-2 rounded-control bg-accent px-6 text-[14.5px] font-semibold text-accent-fg shadow-btn transition-opacity hover:opacity-90"
+              className="inline-flex h-12 items-center gap-2 rounded-control bg-white px-6 text-[14.5px] font-semibold text-accent-ink shadow-btn transition-opacity hover:opacity-90"
             >
               Start saving chats
               <ArrowRight size={15} strokeWidth={2.5} />
             </Link>
             <a
               href="#what"
-              className="inline-flex h-12 items-center gap-2 rounded-control bg-surface px-6 text-[14.5px] font-medium text-ink shadow-hairline transition-colors hover:bg-hover"
+              className="inline-flex h-12 items-center gap-2 rounded-control border border-white/35 bg-white/10 px-6 text-[14.5px] font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20"
             >
               See what it does
             </a>
           </div>
 
-          <p className="mt-6 text-[12.5px] text-ink-3">
+          <p className="mt-6 text-[12.5px] text-white/70">
             No account. Nothing leaves the device. Free, with nothing to cancel.
           </p>
         </div>
@@ -170,7 +159,7 @@ function Hero() {
           className="animate-rise relative mx-auto w-full max-w-[280px] lg:max-w-none"
           style={{ animationDelay: "0.12s" }}
         >
-          <OfflineArt className="w-full drop-shadow-[0_30px_80px_oklch(0%_0_0_/_0.75)]" />
+          <OfflineArt className="w-full drop-shadow-[0_30px_80px_oklch(35%_0.12_255_/_0.55)]" />
         </div>
       </div>
     </section>
@@ -190,7 +179,7 @@ const SHOWN: { id: SourceId; label: string }[] = [
 
 function SourcesBar() {
   return (
-    <div className="border-y border-line bg-canvas">
+    <div className="border-b border-line bg-surface">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-5 py-9 lg:flex-row lg:justify-between lg:px-8">
         <p className="shrink-0 font-mono text-[10.5px] font-semibold uppercase tracking-[0.08em] text-ink-3">
           Keeps chats from
@@ -199,7 +188,7 @@ function SourcesBar() {
           {SHOWN.map((source) => (
             <span
               key={source.id}
-              className="flex items-center gap-2 opacity-70 transition-opacity hover:opacity-100"
+              className="flex items-center gap-2 opacity-80 transition-opacity hover:opacity-100"
             >
               <SourceMark source={source.id} size="sm" />
               <span className="text-[13px] font-medium text-ink-2">{source.label}</span>
@@ -218,7 +207,7 @@ function Features() {
   return (
     <section id="what" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-20 lg:px-8 lg:py-28">
       <div className="max-w-[44ch]">
-        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">
+        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-accent-ink">
           What it does
         </p>
         <h2 className="mt-3 font-display text-[30px] font-bold leading-[1.1] tracking-[-0.035em] text-ink sm:text-[38px]">
@@ -273,7 +262,7 @@ function Feature({
   return (
     <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-16">
       <div className={reverse ? "lg:order-2" : undefined}>
-        <span className="inline-flex size-10 items-center justify-center rounded-card bg-surface text-accent-ink shadow-hairline">
+        <span className="inline-flex size-10 items-center justify-center rounded-card bg-accent-tint text-accent-ink">
           {icon}
         </span>
         <h3 className="mt-5 max-w-[20ch] font-display text-[22px] font-bold leading-tight tracking-[-0.03em] text-ink sm:text-[26px]">
@@ -283,8 +272,9 @@ function Feature({
       </div>
 
       <figure className={reverse ? "lg:order-1" : undefined}>
-        <div className="flex items-center justify-center rounded-well bg-canvas p-6 shadow-card sm:p-8">
-          {art}
+        <div className="marketing-sky relative overflow-hidden rounded-well p-6 shadow-card sm:p-8">
+          <Sky dim />
+          <div className="relative flex items-center justify-center">{art}</div>
         </div>
         <figcaption className="mt-3 text-center text-[11.5px] text-ink-3">{artLabel}</figcaption>
       </figure>
@@ -354,7 +344,7 @@ function Sources() {
   return (
     <section id="sources" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-16 lg:px-8 lg:py-24">
       <div className="max-w-[52ch]">
-        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-3">
+        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-accent-ink">
           What it reads
         </p>
         <h2 className="mt-3 font-display text-[26px] font-bold leading-tight tracking-[-0.03em] text-ink sm:text-[32px]">
@@ -448,22 +438,25 @@ function Privacy() {
 function Closing() {
   return (
     <section className="mx-auto max-w-6xl px-5 py-20 lg:px-8 lg:py-28">
-      <div className="rounded-well bg-surface px-6 py-14 text-center shadow-card sm:px-12">
-        <Smartphone size={20} strokeWidth={2} className="mx-auto text-ink-3" />
-        <h2 className="mx-auto mt-5 max-w-[20ch] font-display text-[28px] font-bold leading-tight tracking-[-0.035em] text-ink sm:text-[36px]">
-          Save one chat and see.
-        </h2>
-        <p className="mx-auto mt-4 max-w-[46ch] text-[13.5px] leading-relaxed text-ink-2">
-          Add it to your home screen and it behaves like any other app - except it keeps working
-          when the signal does not.
-        </p>
-        <Link
-          href="/library"
-          className="mt-8 inline-flex h-11 items-center gap-2 rounded-control bg-accent px-6 text-[14px] font-semibold text-accent-fg shadow-btn transition-opacity hover:opacity-90"
-        >
-          Open Losto
-          <ArrowRight size={15} strokeWidth={2.5} />
-        </Link>
+      <div className="marketing-sky relative overflow-hidden rounded-well px-6 py-14 text-center shadow-card sm:px-12">
+        <Sky />
+        <div className="relative">
+          <Smartphone size={20} strokeWidth={2} className="mx-auto text-white/80" />
+          <h2 className="mx-auto mt-5 max-w-[20ch] font-display text-[28px] font-bold leading-tight tracking-[-0.035em] text-white sm:text-[36px]">
+            Save one chat and see.
+          </h2>
+          <p className="mx-auto mt-4 max-w-[46ch] text-[13.5px] leading-relaxed text-white/85">
+            Add it to your home screen and it behaves like any other app - except it keeps working
+            when the signal does not.
+          </p>
+          <Link
+            href="/library"
+            className="mt-8 inline-flex h-11 items-center gap-2 rounded-control bg-white px-6 text-[14px] font-semibold text-accent-ink shadow-btn transition-opacity hover:opacity-90"
+          >
+            Open Losto
+            <ArrowRight size={15} strokeWidth={2.5} />
+          </Link>
+        </div>
       </div>
     </section>
   );

@@ -555,38 +555,62 @@ mark.losto-hit {
 /* -------------------------------------------------------------------------- */
 /* marketing surface                                                          */
 /*                                                                            */
-/* The page in front of the app, and only that page. It runs on pure black    */
-/* rather than the app's near-black, because a landing page is looked at once */
-/* in a bright room and wants the contrast, while the reader is looked at for */
-/* an hour and does not. Every token below is a neutral: no hue at all, so    */
-/* the source logos and the accent are the only colour on the page.           */
+/* The page in front of the app, and only that page. It runs light, with the  */
+/* azure sky gradient carrying the hero and the closing panel - the same sky  */
+/* that is on the social card in lib/og-image.tsx, so the card someone taps   */
+/* in a chat matches the page they land on. Body copy sits on white; the sky  */
+/* is where all of the colour lives.                                          */
 /* -------------------------------------------------------------------------- */
 
 [data-surface="marketing"] {
-  --page: oklch(0% 0 0);
-  --canvas: oklch(4.2% 0 0);
-  --surface: oklch(8.2% 0 0);
-  --inset: oklch(5.6% 0 0);
-  --hover: oklch(12.5% 0 0);
-  --hover-2: oklch(16% 0 0);
+  --page: oklch(99% 0.004 240);
+  --canvas: oklch(96.8% 0.01 235);
+  --surface: oklch(100% 0 0);
+  --inset: oklch(95.4% 0.013 235);
+  --hover: oklch(94.6% 0.015 235);
+  --hover-2: oklch(91.5% 0.02 235);
 
-  --ink: oklch(98% 0 0);
-  --ink-2: oklch(71% 0 0);
-  --ink-3: oklch(49% 0 0);
+  --ink: oklch(24% 0.05 252);
+  --ink-2: oklch(46% 0.04 249);
+  --ink-3: oklch(60% 0.032 246);
 
-  --line: oklch(100% 0 0 / 0.08);
-  --line-strong: oklch(100% 0 0 / 0.16);
-  --field: oklch(10% 0 0);
-  --stripe: oklch(100% 0 0 / 0.05);
-  --stripe-bg: oklch(3% 0 0);
+  --line: oklch(30% 0.06 250 / 0.11);
+  --line-strong: oklch(30% 0.06 250 / 0.2);
+  --field: oklch(100% 0 0);
+  --stripe: oklch(30% 0.06 250 / 0.045);
+  --stripe-bg: oklch(97.5% 0.008 238);
+
+  --accent: oklch(58% 0.21 254);
+  --accent-ink: oklch(48% 0.19 254);
+  --accent-tint: oklch(58% 0.21 254 / 0.12);
+  --accent-fg: oklch(100% 0 0);
+
+  --green: oklch(60.3% 0.155 150.883);
+  --green-tint: oklch(60.3% 0.155 150.883 / 0.12);
+  --orange: oklch(68.9% 0.179 49.902);
+  --orange-tint: oklch(68.9% 0.179 49.902 / 0.12);
 
   --shadow-hairline: 0 0 0 1px var(--line);
-  --shadow-btn: 0 0 0 1px oklch(100% 0 0 / 0.1), 0 1px 2px oklch(0% 0 0 / 0.6);
-  --shadow-card: 0 0 0 1px oklch(100% 0 0 / 0.07), 0 1px 2px oklch(0% 0 0 / 0.5),
-    0 12px 40px oklch(0% 0 0 / 0.5);
-  --shadow-raised: 0 0 0 1px oklch(100% 0 0 / 0.1), 0 2px 10px oklch(0% 0 0 / 0.55);
+  --shadow-btn: 0 0 0 1px oklch(30% 0.08 250 / 0.12), 0 1px 2px oklch(30% 0.1 252 / 0.14);
+  --shadow-card: 0 0 0 1px oklch(30% 0.08 250 / 0.08), 0 1px 2px oklch(30% 0.1 252 / 0.08),
+    0 14px 44px oklch(45% 0.12 250 / 0.14);
+  --shadow-raised: 0 0 0 1px oklch(30% 0.08 250 / 0.1), 0 2px 10px oklch(30% 0.1 252 / 0.16);
 
   font-family: var(--font-sora), var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+}
+
+/*
+ * The sky itself. Not a flat linear gradient: a bright glow pours in from the
+ * top-left, the base deepens toward the bottom-right, and a darker pool sits
+ * low on the left - matched by eye to the social card's SVG. Vivid and
+ * saturated throughout - the glow lifts lightness without diluting the hue
+ * into pastel.
+ */
+.marketing-sky {
+  background:
+    radial-gradient(120% 95% at 16% 0%, oklch(85% 0.09 225 / 0.85) 0%, transparent 52%),
+    radial-gradient(80% 70% at 12% 108%, oklch(48% 0.19 262 / 0.55) 0%, transparent 60%),
+    linear-gradient(155deg, oklch(70% 0.16 228) 0%, oklch(60% 0.21 252) 52%, oklch(52% 0.22 262) 100%);
 }
 
 /* Headings keep Bricolage - it is the display face, not the body face. */

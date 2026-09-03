@@ -10,12 +10,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
  * collected an email for a feature with no ship date would be worth less than
  * a button that just shows you the feature.
  */
+/* The page is light now, so `ink` needs to hold up as text on white. */
 const THEMES = [
-  { name: "Slate", accent: "68% 0.173 253.301", ink: "78.8% 0.113 248.33" },
-  { name: "Ember", accent: "70% 0.19 40", ink: "80% 0.13 45" },
-  { name: "Moss", accent: "70% 0.16 155", ink: "80% 0.11 158" },
-  { name: "Iris", accent: "66% 0.2 295", ink: "78% 0.14 293" },
-  { name: "Rose", accent: "68% 0.2 15", ink: "79% 0.13 18" },
+  { name: "Azure", accent: "60% 0.17 250", ink: "50% 0.155 250" },
+  { name: "Ember", accent: "62% 0.19 40", ink: "52% 0.16 42" },
+  { name: "Moss", accent: "58% 0.15 155", ink: "48% 0.13 156" },
+  { name: "Iris", accent: "56% 0.2 295", ink: "47% 0.17 294" },
+  { name: "Rose", accent: "60% 0.2 15", ink: "50% 0.17 17" },
 ] as const;
 
 export function ThemeTease() {
