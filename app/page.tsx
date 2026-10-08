@@ -1,10 +1,15 @@
 import {
   ArrowRight,
+  BookOpen,
+  FileDown,
+  GraduationCap,
+  Link2,
   ListChecks,
   ShieldCheck,
   Smartphone,
   Users,
   WifiOff,
+  type LucideIcon,
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -65,6 +70,7 @@ export default function LandingPage() {
       <Hero />
       <SourcesBar />
       <Features />
+      <Everything />
       <HowItWorks />
       <Sources />
       <Privacy />
@@ -79,6 +85,7 @@ export default function LandingPage() {
 function SiteNav() {
   const links = [
     { href: "#what", label: "What it does" },
+    { href: "#features", label: "Features" },
     { href: "#how", label: "How it works" },
     { href: "#sources", label: "What it reads" },
     { href: "#privacy", label: "Privacy" },
@@ -131,7 +138,8 @@ function Hero() {
           <p className="mt-6 max-w-[52ch] text-[15px] leading-relaxed text-white/85 sm:text-[16px]">
             You work through a question bank with an assistant at midnight. Next morning the campus
             wifi gives up and none of it is there. Losto takes the share link and keeps the whole
-            conversation - every answer, table, formula and diagram - on your phone.
+            conversation on your phone - every answer, table, formula and diagram - so it opens in
+            airplane mode, in a basement lab, or on a train.
           </p>
 
           <div className="mt-9 flex flex-wrap items-center gap-3">
@@ -151,7 +159,7 @@ function Hero() {
           </div>
 
           <p className="mt-6 text-[12.5px] text-white/70">
-            No account. Nothing leaves the device. Free, with nothing to cancel.
+            No account. No server holding your notes. Free.
           </p>
         </div>
 
@@ -213,6 +221,10 @@ function Features() {
         <h2 className="mt-3 font-display text-[30px] font-bold leading-[1.1] tracking-[-0.035em] text-ink sm:text-[38px]">
           Three things, properly.
         </h2>
+        <p className="mt-4 text-[14px] leading-relaxed text-ink-2">
+          For students and self-learners who study with ChatGPT, Claude, Gemini and similar
+          assistants, and need those answers again when there is no connection.
+        </p>
       </div>
 
       <div className="mt-14 space-y-16 lg:space-y-24">
@@ -284,6 +296,110 @@ function Feature({
 
 /* -------------------------------------------------------------------------- */
 
+/**
+ * The whole feature list, grouped the way a reader meets it: get it in, read
+ * it, revise from it, pass it on, take it out. Every line is something the app
+ * does today - nothing planned is listed.
+ */
+const GROUPS: { icon: LucideIcon; title: string; points: string[] }[] = [
+  {
+    icon: Link2,
+    title: "Save anything in a few taps",
+    points: [
+      "Paste a ChatGPT share link and the full conversation is saved: text, code, tables, maths and images.",
+      "Save any blog post, documentation page or article the same way, with author and date kept.",
+      "Drop in the export file from ChatGPT or Claude and your whole history lands at once.",
+      "For assistants whose links cannot be read, paste the text or ask the assistant to hand it over as JSON.",
+      "On Android, share a link straight into Losto from another app.",
+    ],
+  },
+  {
+    icon: BookOpen,
+    title: "Read it properly, offline",
+    points: [
+      "Installs to the home screen and opens every page with no connection.",
+      "Answers look the way they were written: highlighted code with line numbers, formulas, sortable tables, callouts and footnotes.",
+      "Mermaid diagrams are drawn, not shown as code, and open full screen to zoom and pan.",
+      "Pictures are stored on the device as real files, so they do not vanish when the original link expires.",
+      "Text size, three typefaces, light and dark themes, and resume where you stopped.",
+    ],
+  },
+  {
+    icon: GraduationCap,
+    title: "Built for revision",
+    points: [
+      "One long answer becomes a checklist: paste forty questions, get forty rows to tick off, each jumping to its answer.",
+      "Flip any chat into question-and-answer cards and quiz yourself.",
+      "Organise by subject and tags, favourite the important ones, and search the full text of everything saved.",
+    ],
+  },
+  {
+    icon: Users,
+    title: "Share with the person next to you",
+    points: [
+      "Hand a saved chat to a friend's phone by AirDrop, Quick Share or an on-screen QR code - no internet at any point.",
+      "Both screens show the same seven-digit code, so you know it arrived whole.",
+    ],
+  },
+  {
+    icon: FileDown,
+    title: "Take it with you",
+    points: [
+      "Export any chat as Markdown, any table as CSV, any diagram as SVG or PNG.",
+      "Back up the whole library to one file and restore it anywhere.",
+    ],
+  },
+  {
+    icon: ShieldCheck,
+    title: "Private by design",
+    points: [
+      "Everything lives in your browser's storage on your own device.",
+      "No sign-up, no analytics, no tracking, nothing used to train anything.",
+      "Delete a chat and it is gone; uninstall and everything goes with it.",
+    ],
+  },
+];
+
+function Everything() {
+  return (
+    <section id="features" className="border-t border-line bg-canvas">
+      <div className="mx-auto max-w-6xl scroll-mt-20 px-5 py-20 lg:px-8 lg:py-28">
+        <div className="max-w-[44ch]">
+          <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-accent-ink">
+            Features
+          </p>
+          <h2 className="mt-3 font-display text-[30px] font-bold leading-[1.1] tracking-[-0.035em] text-ink sm:text-[38px]">
+            And everything around them.
+          </h2>
+        </div>
+
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {GROUPS.map(({ icon: Icon, title, points }) => (
+            <div key={title} className="rounded-well bg-surface p-6 shadow-card">
+              <span className="inline-flex size-9 items-center justify-center rounded-card bg-accent-tint text-accent-ink">
+                <Icon size={16} strokeWidth={2.2} />
+              </span>
+              <h3 className="mt-4 font-display text-[17px] font-bold leading-snug tracking-[-0.025em] text-ink">
+                {title}
+              </h3>
+              <ul className="mt-3.5 space-y-2.5">
+                {points.map((point) => (
+                  <li key={point} className="flex gap-2.5 text-[13px] leading-relaxed text-ink-2">
+                    <span className="mt-[0.62em] size-1 shrink-0 rounded-full bg-accent" />
+                    {point}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+
 function HowItWorks() {
   const steps = [
     {
@@ -294,7 +410,7 @@ function HowItWorks() {
     {
       n: "02",
       title: "It is taken apart properly",
-      body: "Questions and answers, code with its language, tables, maths, and every picture copied onto the device before its link expires.",
+      body: "Questions and answers, code with its language, tables, maths, diagrams, and every picture copied onto the device before its link expires.",
     },
     {
       n: "03",
@@ -332,6 +448,7 @@ function Sources() {
   const rows = [
     ["ChatGPT share links", "Full conversation, code, tables, maths, images", "yes"],
     ["Blogs, docs, Medium", "Article text, code blocks, images, author and date", "yes"],
+    ["Your own export file", "The file ChatGPT or Claude gives you - a whole history at once, read on the device", "yes"],
     ["Pasted text", "Anything you copy yourself, split back into questions and answers", "yes"],
     ["Claude, Perplexity and the rest", "Tried first. Most build the chat in your browser, so Losto shows you how to paste it across", "partial"],
     ["ChatGPT images", "OpenAI does not publish these in share links - add the file yourself in one tap", "partial"],
@@ -354,7 +471,8 @@ function Sources() {
           Losto reads one link at a time, only when you paste it, and only where the site&apos;s own
           robots.txt allows. Plenty of chats are assembled inside your browser and are not in the
           page at all. When a link cannot be read, Losto says so and walks you through copying it
-          across, which takes a few seconds.
+          across, which takes a few seconds. Every saved item keeps its source and original link
+          attached.
         </p>
       </div>
 
