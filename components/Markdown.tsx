@@ -1,90 +1,33 @@
 "use client";
 
-import { Check, Copy, WrapText } from "lucide-react";
-import { memo, useMemo, useState, type ReactNode } from "react";
+import { Info, Lightbulb, MessageSquareWarning, OctagonAlert, TriangleAlert, type LucideIcon } from "lucide-react";
+import { memo, useId, useMemo, type MouseEvent, type ReactNode } from "react";
 import ReactMarkdown, {
   type Components,
   type ExtraProps,
+  type Options,
   defaultUrlTransform,
 } from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import rehypeKatex from "rehype-katex";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import { MediaNode } from "@/components/Media";
+import { CodeBlock, SvgBlock, describeCode } from "@/components/markdown/CodeBlock";
+import { Diagram } from "@/components/markdown/Diagram";
+import { Table, TableBody, TableHead, TableHeading } from "@/components/markdown/Table";
 import { normaliseMath } from "@/lib/markdown";
+import {
+  SANITIZE_SCHEMA,
+  rehypeCodeLines,
+  remarkLosto,
+  type CalloutKind,
+  type TreeNode,
+} from "@/lib/markdown-plugins";
 import { ASSET_SCHEME } from "@/lib/media";
-import { cn, copyText } from "@/lib/utils";
-
-/** Pulls the plain text back out of a highlighted node tree. */
-function nodeText(node: ReactNode): string {
-  if (node === null || node === undefined || typeof node === "boolean") return "";
-  if (typeof node === "string" || typeof node === "number") return String(node);
-  if (Array.isArray(node)) return node.map(nodeText).join("");
-  if (typeof node === "object" && "props" in node) {
-    return nodeText((node as { props: { children?: ReactNode } }).props.children);
-  }
-  return "";
-}
-
-function CodeBlock({ children }: { children?: ReactNode }) {
-  const [copied, setCopied] = useState(false);
-  const [wrap, setWrap] = useState(false);
-
-  const child = Array.isArray(children) ? children[0] : children;
-  const className =
-    (child && typeof child === "object" && "props" in child
-      ? ((child as { props: { className?: string } }).props.className ?? "")
-      : "") || "";
-  const language = className.match(/language-([\w+#-]+)/)?.[1] ?? "";
-  const raw = nodeText(children);
-  const lineCount = raw.trimEnd().split("\n").length;
-
-  return (
-    <div className="group/code my-1 overflow-hidden rounded-card bg-inset shadow-hairline">
-      <div className="flex h-8 items-center justify-between gap-2 bg-surface pl-3 pr-1.5 shadow-[inset_0_-1px_0_var(--line)]">
-        <span className="truncate font-mono text-[10.5px] font-medium uppercase tracking-[0.06em] text-ink-3">
-          {language || "code"}
-          <span className="ml-2 normal-case tracking-normal text-ink-3/70">
-            {lineCount} {lineCount === 1 ? "line" : "lines"}
-          </span>
-        </span>
-        <div className="flex items-center gap-0.5">
-          <button
-            type="button"
-            onClick={() => setWrap((v) => !v)}
-            title={wrap ? "Stop wrapping lines" : "Wrap long lines"}
-            aria-pressed={wrap}
-            className={cn(
-              "flex size-6 items-center justify-center rounded-chip transition-colors",
-              wrap ? "bg-accent-tint text-accent-ink" : "text-ink-3 hover:bg-hover hover:text-ink",
-            )}
-          >
-            <WrapText size={12} strokeWidth={2.2} />
-          </button>
-          <button
-            type="button"
-            onClick={async () => {
-              if (await copyText(raw)) {
-                setCopied(true);
-                setTimeout(() => setCopied(false), 1600);
-              }
-            }}
-            title="Copy code"
-            className="flex size-6 items-center justify-center rounded-chip text-ink-3 transition-colors hover:bg-hover hover:text-ink"
-          >
-            {copied ? (
-              <Check size={12} strokeWidth={2.5} className="text-green" />
-            ) : (
-              <Copy size={12} strokeWidth={2.2} />
-            )}
-          </button>
-        </div>
-      </div>
-      <pre className={cn(wrap && "whitespace-pre-wrap break-words")}>{children}</pre>
-    </div>
-  );
-}
+import { cn } from "@/lib/utils";
 
 /**
  * react-markdown strips any scheme it does not recognise, which would wipe out
@@ -107,22 +50,74 @@ function isMediaOnly(node: unknown): boolean {
   );
 }
 
+/** A link to somewhere else in the same answer - a footnote and its way back. */
+function jumpWithin(event: MouseEvent<HTMLAnchorElement>) {
+  const id = decodeURIComponent(event.currentTarget.getAttribute("href")?.slice(1) ?? "");
+  const target = id ? document.getElementById(id) : null;
+  // The address bar is left alone: the reader's own route lives in it.
+  event.preventDefault();
+  if (!target) return;
+  const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  target.scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "center" });
+}
+
+const CALLOUTS: Record<CalloutKind, { label: string; icon: LucideIcon }> = {
+  note: { label: "Note", icon: Info },
+  tip: { label: "Tip", icon: Lightbulb },
+  important: { label: "Important", icon: MessageSquareWarning },
+  warning: { label: "Warning", icon: TriangleAlert },
+  caution: { label: "Caution", icon: OctagonAlert },
+};
+
+function Callout({ kind, children }: { kind: CalloutKind; children?: ReactNode }) {
+  const { label, icon: Icon } = CALLOUTS[kind];
+  return (
+    <div className="callout" data-callout={kind} role="note">
+      <p className="callout-title">
+        <Icon size={12} strokeWidth={2.4} aria-hidden />
+        {label}
+      </p>
+      <div className="callout-body">{children}</div>
+    </div>
+  );
+}
+
 const COMPONENTS: Components = {
-  pre: ({ children }) => <CodeBlock>{children}</CodeBlock>,
+  pre: ({ node, children }) => {
+    const { language, source } = describeCode(node as TreeNode);
+    if (language === "mermaid") return <Diagram code={source} />;
+    if (language === "svg") return <SvgBlock source={source}>{children}</SvgBlock>;
+    return <CodeBlock node={node as TreeNode}>{children}</CodeBlock>;
+  },
   img: ({ src, alt }) => <MediaNode src={typeof src === "string" ? src : undefined} alt={alt} />,
   // Figures and video cannot live inside a <p>, so unwrap media-only paragraphs.
   p: ({ node, children }) =>
     isMediaOnly(node) ? <>{children}</> : <p>{children}</p>,
-  a: ({ href, children }) => (
-    <a href={href} target="_blank" rel="noreferrer noopener">
-      {children}
-    </a>
-  ),
-  table: ({ children }) => (
-    <div className="overflow-hidden rounded-card shadow-hairline">
-      <table>{children}</table>
-    </div>
-  ),
+  // Everything else on the element is kept: footnote links carry the ids their way back needs.
+  a: ({ node, href, children, ...rest }) => {
+    void node;
+    return href?.startsWith("#") ? (
+      <a {...rest} href={href} onClick={jumpWithin}>
+        {children}
+      </a>
+    ) : (
+      <a {...rest} href={href} target="_blank" rel="noreferrer noopener">
+        {children}
+      </a>
+    );
+  },
+  blockquote: ({ node, children }) => {
+    const kind = node?.properties?.dataCallout as CalloutKind | undefined;
+    return kind && kind in CALLOUTS ? (
+      <Callout kind={kind}>{children}</Callout>
+    ) : (
+      <blockquote>{children}</blockquote>
+    );
+  },
+  table: ({ node, children }) => <Table node={node as TreeNode}>{children}</Table>,
+  thead: ({ children }) => <TableHead>{children}</TableHead>,
+  tbody: ({ children }) => <TableBody>{children}</TableBody>,
+  th: ({ node, children }) => <TableHeading node={node as TreeNode}>{children}</TableHeading>,
   input: ({ checked, type }) =>
     type === "checkbox" ? (
       <input
@@ -134,22 +129,51 @@ const COMPONENTS: Components = {
     ) : null,
 };
 
+/** The same, with diagrams and drawings left as the code they were written as. */
+const PLAIN_COMPONENTS: Components = {
+  ...COMPONENTS,
+  pre: ({ node, children }) => <CodeBlock node={node as TreeNode}>{children}</CodeBlock>,
+};
+
+const REMARK_PLUGINS: Options["remarkPlugins"] = [remarkGfm, remarkMath, remarkLosto];
+
+/* The order is load-bearing - see the note at the top of lib/markdown-plugins.ts. */
+const REHYPE_PLUGINS: Options["rehypePlugins"] = [
+  rehypeRaw,
+  [rehypeSanitize, SANITIZE_SCHEMA],
+  [rehypeKatex, { throwOnError: false, strict: false, output: "htmlAndMathml" }],
+  [rehypeHighlight, { detect: true, ignoreMissing: true }],
+  rehypeCodeLines,
+];
+
 export const Markdown = memo(function Markdown({
   content,
   typeface = "sans",
   headingPrefix,
+  rich = true,
   className,
 }: {
   content: string;
   typeface?: "sans" | "serif" | "mono";
   /** Gives headings stable ids so the reader outline can jump to them. */
   headingPrefix?: string;
+  /**
+   * Draw diagrams and SVG. Off for previews of a clipped answer, where a fence
+   * cut in half would only ever fail to draw.
+   */
+  rich?: boolean;
   className?: string;
 }) {
   const source = useMemo(() => normaliseMath(content), [content]);
 
+  // Footnote ids must be unique on a page holding many answers, each with a [^1].
+  const generated = useId().replace(/[^a-zA-Z0-9]/g, "");
+  const namespace = headingPrefix ?? `md${generated}`;
+  const remarkRehypeOptions = useMemo(() => ({ clobberPrefix: `${namespace}-` }), [namespace]);
+
   const components = useMemo<Components>(() => {
-    if (!headingPrefix) return COMPONENTS;
+    const base = rich ? COMPONENTS : PLAIN_COMPONENTS;
+    if (!headingPrefix) return base;
     /*
      * The id comes from the source line, never a running count. A counter has to
      * survive across renders to keep its place, and then every id shifts the
@@ -157,28 +181,36 @@ export const Markdown = memo(function Markdown({
      * of an answer cannot tolerate.
      */
     const heading = (Tag: "h1" | "h2" | "h3" | "h4") =>
-      function Heading({ node, children }: { children?: ReactNode } & ExtraProps) {
+      function Heading({
+        node,
+        children,
+        id,
+        className: headingClass,
+      }: { children?: ReactNode; id?: string; className?: string } & ExtraProps) {
         const line = node?.position?.start.line;
-        return <Tag id={line ? `${headingPrefix}-h${line}` : undefined}>{children}</Tag>;
+        return (
+          // The footnotes heading is generated, so it arrives with an id and no line.
+          <Tag id={line ? `${headingPrefix}-h${line}` : id} className={headingClass}>
+            {children}
+          </Tag>
+        );
       };
     return {
-      ...COMPONENTS,
+      ...base,
       h1: heading("h1"),
       h2: heading("h2"),
       h3: heading("h3"),
       h4: heading("h4"),
     };
-  }, [headingPrefix]);
+  }, [headingPrefix, rich]);
 
   return (
     <div className={cn("prose-losto", className)} data-typeface={typeface}>
       <ReactMarkdown
         urlTransform={transformUrl}
-        remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[
-          [rehypeKatex, { throwOnError: false, strict: false, output: "htmlAndMathml" }],
-          [rehypeHighlight, { detect: true, ignoreMissing: true }],
-        ]}
+        remarkPlugins={REMARK_PLUGINS}
+        remarkRehypeOptions={remarkRehypeOptions}
+        rehypePlugins={REHYPE_PLUGINS}
         components={components}
       >
         {source}

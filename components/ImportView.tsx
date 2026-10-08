@@ -750,7 +750,7 @@ function ResultRow({
                 <p className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-ink-3">
                   {message.role === "user" ? "Question" : "Answer"}
                 </p>
-                <Markdown content={message.content.slice(0, 1200)} className="text-[13px]" />
+                <Markdown content={message.content.slice(0, 1200)} rich={false} className="text-[13px]" />
               </div>
             ))}
           </div>

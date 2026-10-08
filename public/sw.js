@@ -1,6 +1,6 @@
 /* Losto service worker - makes the whole app usable with no connection. */
 
-const VERSION = "losto-v4";
+const VERSION = "losto-v5";
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const PAGE_CACHE = `${VERSION}-pages`;
@@ -30,6 +30,9 @@ const SHELL = [
   "/icons/chatgpt-icon.webp",
   "/icons/claude-ai-icon.webp",
   "/icons/google-gemini-icon.webp",
+  "/icons/perplexity-ai-icon.webp",
+  "/icons/grok-icon.webp",
+  "/icons/deepseek-logo-icon.webp",
   "/icons/wikipedia-icon.png",
 ];
 
@@ -62,6 +65,28 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("message", (event) => {
   if (event.data === "skip-waiting") self.skipWaiting();
+
+  /*
+   * The page asks for large, optional files once it is idle - the diagram
+   * renderer is over a megabyte, and holding up install for it would delay the
+   * moment the app itself works offline. Same-origin paths only.
+   */
+  if (event.data?.type === "warm" && Array.isArray(event.data.urls)) {
+    event.waitUntil(
+      (async () => {
+        const cache = await caches.open(ASSET_CACHE);
+        for (const path of event.data.urls) {
+          if (typeof path !== "string" || !path.startsWith("/") || path.startsWith("//")) continue;
+          if (await caches.match(path)) continue;
+          try {
+            await cache.add(path);
+          } catch {
+            /* offline or interrupted - the page asks again next time */
+          }
+        }
+      })(),
+    );
+  }
 });
 
 self.addEventListener("fetch", (event) => {
@@ -79,8 +104,12 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Hashed build output is immutable - cache first, forever.
-  if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/")) {
+  // Hashed or versioned output is immutable - cache first, forever.
+  if (
+    url.pathname.startsWith("/_next/static/") ||
+    url.pathname.startsWith("/icons/") ||
+    url.pathname.startsWith("/vendor/")
+  ) {
     event.respondWith(cacheFirst(request, ASSET_CACHE));
     return;
   }

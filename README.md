@@ -72,6 +72,38 @@ Built by [DoodleByte Studio](https://doodlebytestudio.in), Chennai.
 - Copy any answer, pin the important ones, open the original.
 - Images with click-to-enlarge, video and audio with controls, player cards.
 
+**Rendering**
+
+- **Mermaid diagrams are drawn**, in the app's own colours and in both themes:
+  flowcharts, sequence, class, state, entity-relationship, Gantt, pie, mind map,
+  timeline, git graph and the rest of what Mermaid supports. A fence that opens
+  like a diagram but was not labelled `mermaid` is drawn too. Each one opens
+  full screen to pan, pinch or wheel-zoom, and saves as SVG or PNG. Nothing is
+  drawn until the block is near the screen.
+- A diagram that cannot be drawn shows its source instead, with the line Mermaid
+  stopped at. That is what happens with invalid Mermaid, and it is also what
+  happens on a device that has never been online since diagrams were added - see
+  [Diagrams offline](#diagrams-offline).
+- **Code** has line numbers (one switch for every block, remembered), wrap,
+  copy, and save-as with the right extension. Listings over 60 lines open
+  folded. A fence's info string is read: `title="server.ts"` names the block and
+  `{2,5-7}` marks lines. `diff` blocks are tinted by side. A language the fence
+  did not name is still coloured by a best guess, but is not labelled with it.
+- **Tables** sort by any column - numbers as numbers, so `95 ms` sorts below
+  `1,200 ms` - copy as tab-separated rows that paste into a spreadsheet as a
+  table, and save as CSV. Long cells wrap instead of running off on one line.
+- **Callouts**: `> [!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]` and
+  `[!CAUTION]`.
+- **SVG written out as code** is shown as the picture, through an `<img>`, where
+  the browser will not run its scripts or fetch anything it links to.
+- **Inline HTML** that assistants reach for - `<br>` inside table cells, `<sub>`,
+  `<sup>`, `<kbd>`, `<mark>`, `<details>` - is rendered, through GitHub's
+  sanitising allow-list: no scripts, styles, event handlers, iframes or forms.
+  Anything that is not a known tag is kept as the text it was written as, so
+  `List<String>` in a sentence still reads `List<String>`.
+- Maths (KaTeX, `$…$` and `\(…\)` alike), footnotes that link both ways, and
+  task lists.
+
 **Checklist**
 
 - Every question in a chat on its own line, each with a box to tick once you
@@ -400,6 +432,27 @@ rebuild.
 | `LOSTO_STRICT_UA` | unset | `1` disables the browser retry, for pages and media alike |
 | `LOSTO_ASSET_HOSTS` | unset | Comma-separated allow list for the media proxy |
 | `NODE_OPTIONS` | unset | Recommended: `--max-http-header-size=65536`. Node rejects responses whose headers exceed 16 KB, and some large sites - Google among them - send more. Without it those pages cannot be read at all |
+
+## Diagrams offline
+
+Mermaid is about 1.3 MB compressed, and imported the usual way it splits into a
+chunk per diagram type - so a type nobody has drawn yet would be missing from
+the offline cache. Losto ships Mermaid's single-file build instead:
+`next.config.ts` copies it from `node_modules` to `public/vendor/` (ignored by
+git, recreated on every `dev` and `build`), and the reader loads it with a
+script tag the first time a diagram comes near the screen.
+
+The service worker fetches that one file in the background a few seconds after
+the app opens online, and keeps it. From then on every diagram type draws with
+no connection. Two honest limits:
+
+- A browser with **Data Saver** on is not sent the file in the background; it is
+  fetched the first time a diagram is actually on screen.
+- A phone that has **not been online since this was added** has no renderer. A
+  chat received over AirDrop or QR shows its diagrams as source, with a note
+  saying so, until the app is next opened with a connection.
+
+Diagram source is parsed with Mermaid's `securityLevel: "strict"`.
 
 ## Running it
 

@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Mermaid's minified build, copied in by next.config.ts. Not ours to lint.
+    "public/vendor/**",
   ]),
 ]);
 

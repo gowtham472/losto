@@ -362,16 +362,118 @@
   background: transparent;
   tab-size: 2;
 }
-.prose-losto table {
+
+/*
+ * Code, one element per line (see rehypeCodeLines). The horizontal padding
+ * moves from the block onto each line so a marked line is tinted edge to edge,
+ * and the code is as wide as its longest line so that tint does not stop at
+ * the edge of the screen when the block is scrolled sideways.
+ */
+.prose-losto pre.code-lines {
+  padding-inline: 0;
+  counter-reset: line;
+}
+.prose-losto pre.code-lines > code {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+}
+.prose-losto pre.code-lines .line {
+  display: block;
+  padding-inline: 14px;
+  /* An empty line has nothing in it to give it height. */
+  min-height: 1.65em;
+}
+.prose-losto pre.code-lines > code:not(:has(.line)) {
+  padding-inline: 14px;
+}
+.prose-losto pre.code-lines[data-wrap] {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.prose-losto pre.code-lines[data-wrap] > code {
+  width: auto;
+}
+
+/* Line numbers: a gutter that stays put while the code scrolls under it. */
+.prose-losto pre.code-lines[data-numbers] .line {
+  padding-left: 0;
+}
+.prose-losto pre.code-lines[data-numbers] .line::before {
+  counter-increment: line;
+  content: counter(line);
+  position: sticky;
+  left: 0;
+  display: inline-block;
+  box-sizing: content-box;
+  width: var(--gutter, 2ch);
+  padding: 0 12px 0 14px;
+  margin-right: 2px;
+  text-align: right;
+  color: color-mix(in oklch, var(--ink-3) 70%, transparent);
+  background: var(--inset);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.prose-losto pre.code-lines[data-numbers][data-wrap] .line {
+  position: relative;
+  padding-left: calc(var(--gutter, 2ch) + 28px);
+}
+.prose-losto pre.code-lines[data-numbers][data-wrap] .line::before {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+/* Lines called out in the fence - ```ts {2,5-7} - and the sides of a diff. */
+.prose-losto pre.code-lines .line[data-marked] {
+  background: var(--accent-tint);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.prose-losto pre.code-lines .line[data-diff="add"] {
+  background: var(--green-tint);
+}
+.prose-losto pre.code-lines .line[data-diff="del"] {
+  background: var(--red-tint);
+}
+.prose-losto pre.code-lines .line[data-diff="hunk"] {
+  color: var(--ink-3);
+}
+.prose-losto pre.code-lines .line[data-marked]::before,
+.prose-losto pre.code-lines .line[data-diff="add"]::before,
+.prose-losto pre.code-lines .line[data-diff="del"]::before {
+  background: transparent;
+}
+
+/* Diagrams: never wider than the column, never taller than the screen. */
+.losto-diagram > svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  max-height: 72vh;
+}
+.losto-diagram.absolute > svg {
   width: 100%;
+  max-width: none !important;
+  max-height: none;
+}
+
+/*
+ * Tables size to their content and scroll inside their card. A cell of prose
+ * wraps at a readable measure; before, it ran on one line however long it was.
+ */
+.prose-losto .table-scroll {
+  overflow-x: auto;
+}
+.prose-losto table {
+  width: max-content;
+  min-width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 0.92em;
-  display: block;
-  overflow-x: auto;
-  white-space: nowrap;
 }
 .prose-losto thead th {
+  white-space: nowrap;
   text-align: left;
   font-weight: 600;
   font-size: 11.5px;
@@ -382,10 +484,16 @@
   padding: 8px 12px;
   border-bottom: 1px solid var(--line);
 }
-.prose-losto tbody td {
+.prose-losto tbody td,
+.prose-losto tbody th {
   padding: 9px 12px;
   border-bottom: 1px solid var(--line);
   vertical-align: top;
+  max-width: 44ch;
+  text-align: left;
+}
+.prose-losto tbody tr:hover td {
+  background: color-mix(in oklch, var(--inset) 55%, transparent);
 }
 .prose-losto tbody tr:last-child td {
   border-bottom: 0;
@@ -419,6 +527,155 @@ mark.losto-hit {
   color: var(--accent-ink);
   border-radius: 3px;
   padding: 0 2px;
+}
+
+/* The few HTML tags assistants write straight into an answer. */
+.prose-losto kbd {
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+  padding: 0.14em 0.42em;
+  border-radius: 5px;
+  background: var(--surface);
+  box-shadow: 0 0 0 1px var(--line-strong), 0 1.5px 0 var(--line-strong);
+  white-space: nowrap;
+}
+.prose-losto sub,
+.prose-losto sup {
+  font-size: 0.74em;
+  line-height: 0;
+}
+.prose-losto del,
+.prose-losto s {
+  color: var(--ink-3);
+}
+.prose-losto abbr[title] {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: help;
+}
+.prose-losto details {
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-hairline);
+  background: var(--surface);
+  padding: 0 12px;
+}
+.prose-losto details > summary {
+  cursor: pointer;
+  padding: 9px 0;
+  font-weight: 600;
+  color: var(--ink);
+}
+.prose-losto details > summary::marker {
+  color: var(--ink-3);
+}
+.prose-losto details[open] {
+  padding-bottom: 12px;
+}
+.prose-losto details[open] > summary {
+  margin-bottom: 4px;
+  box-shadow: inset 0 -1px 0 var(--line);
+}
+.prose-losto details > * + * {
+  margin-top: 0.8em;
+}
+
+/* Task lists are their own bullets. */
+.prose-losto ul.contains-task-list {
+  list-style: none;
+  padding-left: 0.2em;
+}
+
+/*
+ * Callouts - "> [!NOTE]" and the rest of GitHub's five. Built like the code and
+ * table blocks around them: a quiet card on the surface colour, with the kind
+ * named in a thin tinted strip along the top. The colour says what sort of
+ * aside this is; the text itself stays on a plain background and reads as text.
+ */
+.prose-losto .callout {
+  --callout: var(--accent);
+  --callout-ink: var(--accent-ink);
+  --callout-tint: var(--accent-tint);
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-hairline);
+}
+.prose-losto .callout[data-callout="tip"] {
+  --callout: var(--green);
+  --callout-ink: var(--green);
+  --callout-tint: var(--green-tint);
+}
+.prose-losto .callout[data-callout="important"] {
+  --callout: var(--violet);
+  --callout-ink: var(--violet);
+  --callout-tint: var(--violet-tint);
+}
+.prose-losto .callout[data-callout="warning"] {
+  --callout: var(--orange);
+  --callout-ink: var(--orange);
+  --callout-tint: var(--orange-tint);
+}
+.prose-losto .callout[data-callout="caution"] {
+  --callout: var(--red);
+  --callout-ink: var(--red);
+  --callout-tint: var(--red-tint);
+}
+.prose-losto .callout-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding-inline: 12px;
+  background: var(--callout-tint);
+  box-shadow: inset 0 -1px 0 color-mix(in oklch, var(--callout) 22%, transparent);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--callout-ink);
+}
+.prose-losto .callout-body {
+  padding: 10px 14px 12px;
+  font-size: 0.96em;
+  color: var(--ink);
+}
+.prose-losto .callout-body > * + * {
+  margin-top: 0.6em;
+}
+
+/* The generated "Footnotes" heading is for screen readers only. */
+.prose-losto .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Footnotes: a quieter list under a rule, each one linked back to its mark. */
+.prose-losto section.footnotes {
+  margin-top: 1.8em;
+  padding-top: 0.9em;
+  border-top: 1px solid var(--line);
+  font-size: 0.9em;
+  color: var(--ink-2);
+}
+.prose-losto [data-footnote-ref] {
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0 0.15em;
+}
+.prose-losto [data-footnote-backref] {
+  text-decoration: none;
+  font-family: var(--font-mono);
+}
+.prose-losto section.footnotes li:target,
+.prose-losto section.footnotes li:focus-within {
+  color: var(--ink);
 }
 
 /* ---------------------------------------------------------------------------

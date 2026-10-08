@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Stray study material - the icons folder is for app assets.
 public/icons/*.pdf
+
+# Copied out of node_modules by next.config.ts on every start and build.
+/public/vendor/

@@ -133,7 +133,10 @@ export function snippetAround(text: string, query: string, radius = 90): string 
 }
 
 export function downloadFile(name: string, content: string, mime = "application/json") {
-  const blob = new Blob([content], { type: `${mime};charset=utf-8` });
+  downloadBlob(name, new Blob([content], { type: `${mime};charset=utf-8` }));
+}
+
+export function downloadBlob(name: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
