@@ -34,8 +34,10 @@ Built by [DoodleByte Studio](https://doodlebytestudio.in), Chennai.
 2. **Store** - parsed messages go into IndexedDB. Metadata and message bodies
    live in separate object stores, so a library of hundreds of chats lists
    instantly without deserialising every answer. Media is stored as blobs.
-3. **Read** - a service worker precaches the app shell, so every route opens
-   offline and the reader renders the original markdown exactly as written.
+3. **Read** - a service worker precaches every route together with the scripts,
+   styles and fonts each one names, so a page opens offline even if it was never
+   visited while online, and the reader renders the original markdown exactly as
+   written.
 
 ## Features
 

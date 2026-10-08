@@ -1,6 +1,6 @@
 /* Losto service worker - makes the whole app usable with no connection. */
 
-const VERSION = "losto-v5";
+const VERSION = "losto-v6";
 const SHELL_CACHE = `${VERSION}-shell`;
 const ASSET_CACHE = `${VERSION}-assets`;
 const PAGE_CACHE = `${VERSION}-pages`;
@@ -36,6 +36,50 @@ const SHELL = [
   "/icons/wikipedia-icon.png",
 ];
 
+/**
+ * A page is its document plus the hashed scripts and styles that document
+ * names. Caching only the document leaves a route that opens offline to a
+ * blank error unless it happened to be visited while online, so everything a
+ * precached page points at is fetched alongside it. Stylesheets are read in
+ * turn for their fonts - the maths typefaces above all, which are only ever
+ * requested one formula at a time.
+ */
+const BUILD_ASSET = /\/_next\/static\/[A-Za-z0-9_.~/-]+/g;
+const STYLE_FONT = /url\(\s*["']?([^"')]+\.woff2)["']?\s*\)/g;
+
+async function precacheAssets(shell) {
+  const assets = await caches.open(ASSET_CACHE);
+  const wanted = new Set();
+
+  for (const url of SHELL) {
+    const response = await shell.match(url);
+    if (!response?.headers.get("content-type")?.includes("text/html")) continue;
+    for (const path of (await response.text()).match(BUILD_ASSET) ?? []) wanted.add(path);
+  }
+
+  const fetchInto = async (path) => {
+    if (await assets.match(path)) return;
+    try {
+      await assets.add(path);
+    } catch {
+      /* one missing chunk must not fail the install */
+    }
+  };
+
+  await Promise.all([...wanted].map(fetchInto));
+
+  const fonts = new Set();
+  for (const path of wanted) {
+    if (!path.endsWith(".css")) continue;
+    const sheet = await assets.match(path);
+    if (!sheet) continue;
+    for (const [, ref] of (await sheet.text()).matchAll(STYLE_FONT)) {
+      fonts.add(new URL(ref, new URL(path, self.location.origin)).pathname);
+    }
+  }
+  await Promise.all([...fonts].map(fetchInto));
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
@@ -43,6 +87,8 @@ self.addEventListener("install", (event) => {
       await Promise.allSettled(
         SHELL.map((url) => cache.add(new Request(url, { cache: "reload" }))),
       );
+      // Best effort: a page that is half cached is still better than no worker.
+      await precacheAssets(cache).catch(() => {});
       // Only jump the queue on a first install. Taking over a page that is
       // already running would pull the build's hashed chunks out from under it.
       const existing = await self.clients.matchAll({ type: "window" });
